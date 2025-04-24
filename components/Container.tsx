@@ -30,10 +30,10 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: "column",
         backgroundColor: "#ffffff",
+        paddingVertical: 20,
     },
     content: {
         flexGrow: 1,
-        paddingVertical: 20,
     },
 });
 

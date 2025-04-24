@@ -12,7 +12,7 @@ export default function HomeScreen() {
   const beginTesting = async () => {
     console.log("beginTesting");
     // await startTesting(username);
-    router.push("/(testing-form)/athlete-info");
+    router.push("/(testing-form)/red-flags");
   }
 
   return (

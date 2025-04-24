@@ -1,7 +1,7 @@
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import TextInputField from '@/components/TextInputField';
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import LabeledPicker from '@/components/LabeledPicker';
 import SubmitButton from '@/components/SubmitButton';
@@ -47,7 +47,7 @@ export default function AthleteInfo() {
             placeholder="Введите дату рождения"
             value={birthDate}
             onChangeText={setBirthDate}
-            keyboardType="numbers-and-punctuation"
+            keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric"}
           />
         </View>
         <View style={styles.inputField}>
@@ -56,7 +56,7 @@ export default function AthleteInfo() {
             placeholder="Введите серию и номер паспорта"
             value={passportNumber}
             onChangeText={setPassportNumber}
-            keyboardType="numbers-and-punctuation"
+            keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric"}
           />
         </View>
         <View style={styles.inputField}>
@@ -65,7 +65,7 @@ export default function AthleteInfo() {
             placeholder="Введите дату осмотра"
             value={inspectionDate}
             onChangeText={setInspectionDate}
-            keyboardType="numbers-and-punctuation"
+            keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric"}
             required={true}
           />
         </View>
@@ -75,7 +75,7 @@ export default function AthleteInfo() {
             placeholder="Введите дату получения травмы"
             value={injuryDate}
             onChangeText={setInjuryDate}
-            keyboardType="numbers-and-punctuation"
+            keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric"}
             required={true}
           />
         </View>
@@ -85,7 +85,7 @@ export default function AthleteInfo() {
             placeholder="Введите время получения травмы"
             value={injuryTime}
             onChangeText={setInjuryTime}
-            keyboardType="numbers-and-punctuation"
+            keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "default"}
             required={true}
           />
         </View>
@@ -176,6 +176,6 @@ const styles = StyleSheet.create({
   },
   inputField: {
     width: "100%",
-    marginTop: 20,
+    marginBottom: 20,
   },
 }); 
