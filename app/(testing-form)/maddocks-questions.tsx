@@ -3,6 +3,7 @@ import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import { StyleSheet, View, Text } from 'react-native';
 import { useState } from 'react';
+import { router } from 'expo-router';
 
 const QUESTIONS = [
   { key: 'event', label: 'На каком мероприятии мы сегодня находимся?' },
@@ -24,6 +25,7 @@ export default function MaddocksQuestions() {
   const score = QUESTIONS.reduce((sum, q) => sum + (answers[q.key] ? 1 : 0), 0);
 
   const handleSubmit = () => {
+    router.push('/(testing-form)/symptoms-questionary');
     console.log('Maddocks questions submitted', answers, 'Score:', score);
   };
 

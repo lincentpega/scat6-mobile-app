@@ -51,6 +51,30 @@ export default function TestingFormLayout() {
           title: "Вопросы Мэддокса"
         }}
       />
+      <Stack.Screen
+        name="symptoms-questionary"
+        options={{
+          title: "Опросник симптомов"
+        }}
+      />
+      <Stack.Screen
+        name="orientation-assessment"
+        options={{
+          title: "Оценка ориентации"
+        }}
+      />
+      <Stack.Screen
+        name="short-term-memory"
+        options={{
+          title: "Кратковременная память"
+        }}
+      />
+      <Stack.Screen
+        name="concentration"
+        options={{
+          title: "Концентрация внимания"
+        }}
+      />
     </Stack>
   );
 }
