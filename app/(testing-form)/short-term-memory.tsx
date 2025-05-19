@@ -50,7 +50,7 @@ export default function ShortTermMemory() {
   };
 
   const handleSubmit = () => {
-    router.push('/(testing-form)/concentration');
+    router.push('/(testing-form)/concentration-numbers');
   };
 
   return (

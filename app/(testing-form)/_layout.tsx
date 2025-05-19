@@ -70,9 +70,39 @@ export default function TestingFormLayout() {
         }}
       />
       <Stack.Screen
-        name="concentration"
+        name="concentration-numbers"
         options={{
-          title: "Концентрация внимания"
+          title: "Концентрация внимания (числа)"
+        }}
+      />
+      <Stack.Screen
+        name="concentration-months"
+        options={{
+          title: "Концентрация внимания (месяцы)"
+        }}
+      />
+      <Stack.Screen
+        name="coordination-and-balance-info"
+        options={{
+          title: "Координация и равновесие: вводная"
+        }}
+      />
+      <Stack.Screen
+        name="coordination-and-balance-mbess"
+        options={{
+          title: "Координация и равновесие: mBESS"
+        }}
+      />
+      <Stack.Screen
+        name="tandem-walk"
+        options={{
+          title: "Тандемная походка"
+        }}
+      />
+      <Stack.Screen
+        name="tandem-walk-dual"
+        options={{
+          title: "Походка с двумя задачами (опционально)"
         }}
       />
     </Stack>

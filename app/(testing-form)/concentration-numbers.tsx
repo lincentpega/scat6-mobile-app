@@ -27,7 +27,7 @@ const DIGIT_LISTS = {
     ],
 };
 
-export default function Concentration() {
+export default function ConcentrationNumbers() {
     const [selectedList, setSelectedList] = useState<'A' | 'B' | 'V'>('A');
     // answers[trialIdx][rowIdx] = true/false
     const [answers, setAnswers] = useState(
@@ -52,7 +52,7 @@ export default function Concentration() {
 
     const handleSubmit = () => {
         // TODO: navigate to the next screen or save results
-        router.push('/(testing-form)/coordination-eye-movement');
+        router.push('/(testing-form)/concentration-months');
     };
 
     return (
