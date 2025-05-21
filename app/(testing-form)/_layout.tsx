@@ -105,6 +105,18 @@ export default function TestingFormLayout() {
           title: "Походка с двумя задачами (опционально)"
         }}
       />
+      <Stack.Screen
+        name="tandem-walk-result"
+        options={{
+          title: "Тандемная походка: итог"
+        }}
+      />
+      <Stack.Screen
+        name="deferred-memory"
+        options={{
+          title: "Отложенная память"
+        }}
+      />
     </Stack>
   );
 }

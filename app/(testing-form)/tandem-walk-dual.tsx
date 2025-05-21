@@ -6,6 +6,7 @@ import SubmitButton from '@/components/SubmitButton';
 import { Picker } from '@react-native-picker/picker';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import Timer from '@/components/Timer';
+import { router } from 'expo-router';
 
 const PRACTICE_NUMBERS = [93, 86, 79, 72, 65, 58, 51, 44];
 const MAIN_START_OPTIONS = [88, 90, 98];
@@ -33,6 +34,10 @@ export default function TandemWalkDual() {
   );
   const [trialsTime, setTrialsTime] = useState<number[]>(Array(3).fill(0));
   const [trialsTimerRunning, setTrialsTimerRunning] = useState<boolean[]>(Array(3).fill(false));
+
+  const handleSubmit = () => {
+    router.push('/(testing-form)/tandem-walk-result');
+  };
 
   // Handlers for practice
   const handlePracticeCheck = (idx: number) => {
@@ -183,7 +188,7 @@ export default function TandemWalkDual() {
             </View>
           </View>
         </View>
-        <SubmitButton text="Далее" onPress={() => {}} style={{ marginTop: 24, width: '100%' }} />
+        <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 24, width: '100%' }} />
       </View>
     </ScrollViewKeyboardAwareContainer>
   );
