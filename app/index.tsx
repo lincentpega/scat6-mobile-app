@@ -1,29 +1,56 @@
-import TextInputField from "@/components/TextInputField";
-// import { startTesting } from "@/services/form-service";
-import {useState} from "react";
-import {StyleSheet, Text, View} from "react-native";
-import {router} from "expo-router";
-import KeyboardAwareContainer from "@/components/Container";
-import SubmitButton from "@/components/SubmitButton";
+// app/(home)/HomeScreen.tsx
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import KeyboardAwareContainer from '@/components/Container';
+import SubmitButton from '@/components/SubmitButton';
+import { useAuth } from '@/context/AuthContext';
+import { router } from 'expo-router';
 
 export default function HomeScreen() {
-  const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { isUserLoggedIn, signIn, logout } = useAuth();
 
-  const beginTesting = async () => {
-    console.log("beginTesting");
-    // await startTesting(username);
-    router.push("/(testing-form)/red-flags");
+  const handleSignInPress = async () => {
+    setLoading(true);
+    const success = await signIn();
+    setLoading(false);
+
+    if (success) {
+      // После успешного логина переходим на форму
+      router.push('/(testing-form)/red-flags');
+    } else {
+      // можно добавить toast или Alert о неуспехе
+    }
+  };
+
+  const handleLogoutPress = async () => {
+    setLoading(true);
+    await logout();
+    setLoading(false);
+    // при логауте контекст сбросит isUserLoggedIn, UI автоматически отрисуется
+  };
+
+  if (loading) {
+    return (
+      <KeyboardAwareContainer contentContainerStyle={styles.content}>
+        <ActivityIndicator size="large" />
+      </KeyboardAwareContainer>
+    );
   }
 
   return (
     <KeyboardAwareContainer contentContainerStyle={styles.content}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.headerText}>SCAT6</Text>
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInputField style={{marginBottom: 8}} placeholder="Введите имя пользователя" value={username} onChangeText={setUsername}/>
-          <SubmitButton onPress={beginTesting} text="Начать тестирование" disabled={username.length === 0}/>
-        </View>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerText}>SCAT6</Text>
+      </View>
+
+      <View style={styles.inputContainer}>
+        {isUserLoggedIn ? (
+          <SubmitButton onPress={handleLogoutPress} text="Выйти" />
+        ) : (
+          <SubmitButton onPress={handleSignInPress} text="Войти через Keycloak" />
+        )}
+      </View>
     </KeyboardAwareContainer>
   );
 }
@@ -31,24 +58,24 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 40,
   },
   headerContainer: {
-    width: "100%",
-    alignItems: "center",
+    width: '100%',
+    alignItems: 'center',
     marginTop: 70,
   },
   headerText: {
     fontSize: 70,
-    fontWeight: "bold",
-    color: "#000000",
+    fontWeight: 'bold',
+    color: '#000',
   },
   inputContainer: {
-    width: "100%",
-    alignItems: "center",
+    width: '100%',
+    alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 40,
-  }
+  },
 });

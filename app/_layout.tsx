@@ -1,22 +1,37 @@
+// layouts/RootLayout.tsx
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Tabs } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { AuthProvider, useAuth } from '@/context/AuthContext';  // <-- импортируем хук
+import { useEffect } from 'react';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// Не даём сплэш-скрину закрыться до загрузки шрифтов
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+const HomeTabIcon = ({ color, size }: { color: string; size: number }) => (
+  <Ionicons name="home-outline" color={color} size={size} />
+);
+
+const FormTabIcon = ({ color, size }: { color: string; size: number }) => (
+  <Ionicons name="document-text-outline" color={color} size={size} />
+);
+
+// Новый внутренний компонент, который будет иметь доступ к AuthContext
+function LayoutContent() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  const { isUserLoggedIn } = useAuth();
+
+  // прячем сплэш, как только шрифты подгрузились
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
@@ -29,12 +44,41 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(testing-form)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+      <Tabs
+        screenOptions={{
+          headerTitleAlign: 'center',
+          tabBarActiveTintColor: '#0066cc',
+        }}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Главная',
+            tabBarLabel: 'Главная',
+            headerShown: false,
+            tabBarIcon: HomeTabIcon,
+          }}
+        />
+          <Tabs.Screen
+            name="(testing-form)"
+            options={{
+              title: 'Форма',
+              tabBarLabel: 'Форма',
+              headerShown: false,
+              href: isUserLoggedIn ? undefined : null,
+              tabBarIcon: FormTabIcon,
+            }}
+          />
+      </Tabs>
       <StatusBar style="auto" />
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <LayoutContent /> 
+    </AuthProvider>
   );
 }
