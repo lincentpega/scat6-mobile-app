@@ -8,20 +8,17 @@ import { router } from 'expo-router';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
-  const { isUserLoggedIn, signIn, logout } = useAuth();
+  const { isUserLoggedIn, userFullName, signIn, logout } = useAuth();
 
   const handleSignInPress = async () => {
     setLoading(true);
-    const success = await signIn();
+    await signIn();
     setLoading(false);
-
-    if (success) {
-      // После успешного логина переходим на форму
-      router.push('/(testing-form)/red-flags');
-    } else {
-      // можно добавить toast или Alert о неуспехе
-    }
   };
+
+  const handleGoToForm = async () => {
+    router.push('/(testing-form)/red-flags');
+  }
 
   const handleLogoutPress = async () => {
     setLoading(true);
@@ -42,13 +39,19 @@ export default function HomeScreen() {
     <KeyboardAwareContainer contentContainerStyle={styles.content}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>SCAT6</Text>
+        {isUserLoggedIn && userFullName && (
+          <Text style={styles.nameText}>Добро пожаловать, {userFullName}</Text>
+        )}
       </View>
 
       <View style={styles.inputContainer}>
         {isUserLoggedIn ? (
-          <SubmitButton onPress={handleLogoutPress} text="Выйти" />
+          <> 
+            <SubmitButton style={{ marginBottom: 10 }} onPress={handleGoToForm} text="Перейти к форме" />
+            <SubmitButton onPress={handleLogoutPress} text="Выйти" />
+          </>
         ) : (
-          <SubmitButton onPress={handleSignInPress} text="Войти через Keycloak" />
+          <SubmitButton onPress={handleSignInPress} text="Войти" />
         )}
       </View>
     </KeyboardAwareContainer>
@@ -71,6 +74,11 @@ const styles = StyleSheet.create({
     fontSize: 70,
     fontWeight: 'bold',
     color: '#000',
+  },
+  nameText: {
+    fontSize: 18,
+    marginTop: 10,
+    color: '#666',
   },
   inputContainer: {
     width: '100%',

@@ -1,33 +1,42 @@
-// services/authService.ts
-
 import * as AuthSession from 'expo-auth-session';
 import * as SecureStore  from 'expo-secure-store';
+import {jwtDecode} from 'jwt-decode';
 
-const issuer   = 'http://192.168.0.102:8788/realms/scat6-app';
+const issuer   = 'http://172.20.10.3:8788/realms/scat6-app';
 const clientId = 'mobile-app';
 const scheme   = 'scat6-app';
 const discoveryPromise = AuthSession.fetchDiscoveryAsync(issuer);
 
-// Вместо одного JSON-ключа разбиваем на три
 const KEY_ACCESS  = 'accessToken';
 const KEY_REFRESH = 'refreshToken';
 const KEY_EXPIRE  = 'expireAt';
+
+export async function getUserFullName(): Promise<string | null> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error('No access token');
+  try {
+    const { name } = jwtDecode<{ name?: string }>(accessToken);
+    return name ?? null;
+  } catch (err) {
+    console.error('jwt-decode error:', err);
+    return null;
+  }
+}
 
 export async function isLoggedIn(): Promise<boolean> {
   const accessToken = await getValidAccessToken();
   return accessToken !== null;
 }
 
-// Сохраняем токены по отдельности
 async function storeTokenResponse(res: AuthSession.TokenResponse) {
   const expireAt = Date.now() + (res.expiresIn ?? 3600) * 1000;
-
+  console.log('access token', res.accessToken);
   await SecureStore.setItemAsync(KEY_ACCESS,  res.accessToken);
-  await SecureStore.setItemAsync(KEY_REFRESH, res.refreshToken!);
+  if (!res.refreshToken) throw new Error('Refresh token is required');
+  await SecureStore.setItemAsync(KEY_REFRESH, res.refreshToken);
   await SecureStore.setItemAsync(KEY_EXPIRE,  String(expireAt));
 }
 
-// Получаем и обновляем (если нужно) accessToken
 export async function getValidAccessToken(): Promise<string | null> {
   const [access, refresh, expireStr] = await Promise.all([
     SecureStore.getItemAsync(KEY_ACCESS),
@@ -60,7 +69,6 @@ export async function getValidAccessToken(): Promise<string | null> {
   }
 }
 
-// Логин
 export async function signInAsync(): Promise<boolean> {
   const redirectUri = AuthSession.makeRedirectUri({ scheme });
   const authRequest = new AuthSession.AuthRequest({
@@ -91,7 +99,6 @@ export async function signInAsync(): Promise<boolean> {
   return true;
 }
 
-// Логаут
 export async function logoutAsync() {
   await Promise.all([
     SecureStore.deleteItemAsync(KEY_ACCESS),
