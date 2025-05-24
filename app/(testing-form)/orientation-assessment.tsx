@@ -2,8 +2,10 @@ import CheckboxField from '@/components/CheckboxField';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import { StyleSheet, View, Text } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
+import { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
+import { saveOrientationAssessment, loadOrientationAssessment } from '@/services/medicalOfficeAssessmentStorageService';
 
 const ORIENTATION_QUESTIONS = [
   { key: 'month', label: 'Какой сейчас месяц?' },
@@ -14,19 +16,50 @@ const ORIENTATION_QUESTIONS = [
 ];
 
 export default function OrientationAssessment() {
-  const [answers, setAnswers] = useState<{[key: string]: boolean}>(
-    Object.fromEntries(ORIENTATION_QUESTIONS.map(q => [q.key, false]))
-  );
+  // Initialize state with default values matching the OrientationAssessment interface
+  const [orientationAssessment, setOrientationAssessment] = useState<MedicalOfficeAssessment.OrientationAssessment>({
+    month: false,
+    date: false,
+    weekday: false,
+    year: false,
+    time: false,
+    score: 0,
+  });
+
+  // Load saved data on component mount
+  useEffect(() => {
+    (async () => {
+      const loadedOrientationAssessment = await loadOrientationAssessment();
+      if (loadedOrientationAssessment) {
+        console.log("Loaded orientation assessment data from storage:", JSON.stringify(loadedOrientationAssessment, null, 2));
+        setOrientationAssessment(loadedOrientationAssessment);
+      }
+    })();
+  }, []);
+
+  // Calculate score whenever answers change
+  useEffect(() => {
+    const newScore = ORIENTATION_QUESTIONS.reduce((sum, q) => 
+      sum + (orientationAssessment[q.key as keyof MedicalOfficeAssessment.OrientationAssessment] ? 1 : 0), 0
+    );
+    setOrientationAssessment(prev => ({ ...prev, score: newScore }));
+  }, [orientationAssessment.month, orientationAssessment.date, orientationAssessment.weekday, orientationAssessment.year, orientationAssessment.time]);
 
   const handleChange = (key: string) => {
-    setAnswers(prev => ({ ...prev, [key]: !prev[key] }));
+    setOrientationAssessment(prev => ({ 
+      ...prev, 
+      [key]: !prev[key as keyof MedicalOfficeAssessment.OrientationAssessment] 
+    }));
   };
 
-  const score = ORIENTATION_QUESTIONS.reduce((sum, q) => sum + (answers[q.key] ? 1 : 0), 0);
-
-  const handleSubmit = () => {
-    console.log('Orientation assessment submitted', answers, 'Score:', score);
-    router.push('/(testing-form)/short-term-memory');
+  const handleSubmit = async () => {
+    try {
+      await saveOrientationAssessment(orientationAssessment);
+      console.log("Orientation assessment data saved to storage:", JSON.stringify(orientationAssessment, null, 2));
+      router.push('/(testing-form)/short-term-memory');
+    } catch (e) {
+      console.error("Failed to save orientation assessment data", e);
+    }
   };
 
   return (
@@ -40,13 +73,13 @@ export default function OrientationAssessment() {
             <CheckboxField
               key={q.key}
               label={q.label}
-              checked={answers[q.key]}
+              checked={orientationAssessment[q.key as keyof MedicalOfficeAssessment.OrientationAssessment] as boolean}
               onChange={() => handleChange(q.key)}
               style={{ borderBottomWidth: idx === ORIENTATION_QUESTIONS.length - 1 ? 1 : 0 }}
             />
           ))}
         </View>
-        <Text style={styles.scoreText}>Оценка ориентации: <Text style={{ fontWeight: 'bold' }}>{score}</Text> / 5</Text>
+        <Text style={styles.scoreText}>Оценка ориентации: <Text style={{ fontWeight: 'bold' }}>{orientationAssessment.score}</Text> / 5</Text>
         <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 20 }} />
       </View>
     </ScrollViewKeyboardAwareContainer>

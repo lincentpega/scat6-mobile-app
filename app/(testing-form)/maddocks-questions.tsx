@@ -2,8 +2,10 @@ import CheckboxField from '@/components/CheckboxField';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import { StyleSheet, View, Text } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
+import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
+import { saveMaddocksQuestions, loadMaddocksQuestions } from "@/services/immediateAssessmentStorageService";
 
 const QUESTIONS = [
   { key: 'event', label: 'На каком мероприятии мы сегодня находимся?' },
@@ -14,19 +16,30 @@ const QUESTIONS = [
 ];
 
 export default function MaddocksQuestions() {
-  const [answers, setAnswers] = useState<{[key: string]: boolean}>(
-    Object.fromEntries(QUESTIONS.map(q => [q.key, false]))
-  );
+  const [answers, setAnswers] = useState<ImmediateAssessment.MaddocksQuestions>({
+    event: false,
+    period: false,
+    lastScorer: false,
+    teamLastWeek: false,
+    teamWin: false,
+  });
 
-  const handleChange = (key: string) => {
+  useEffect(() => {
+    (async () => {
+      const saved = await loadMaddocksQuestions();
+      if (saved) setAnswers(saved);
+    })();
+  }, []);
+
+  const handleChange = (key: keyof ImmediateAssessment.MaddocksQuestions) => {
     setAnswers(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const score = QUESTIONS.reduce((sum, q) => sum + (answers[q.key] ? 1 : 0), 0);
+  const score = QUESTIONS.reduce((sum, q) => sum + (answers[q.key as keyof ImmediateAssessment.MaddocksQuestions] ? 1 : 0), 0);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    await saveMaddocksQuestions(answers);
     router.push('/(testing-form)/symptoms-questionary');
-    console.log('Maddocks questions submitted', answers, 'Score:', score);
   };
 
   return (
@@ -41,8 +54,8 @@ export default function MaddocksQuestions() {
             <CheckboxField
               key={q.key}
               label={q.label}
-              checked={answers[q.key]}
-              onChange={() => handleChange(q.key)}
+              checked={answers[q.key as keyof ImmediateAssessment.MaddocksQuestions]}
+              onChange={() => handleChange(q.key as keyof ImmediateAssessment.MaddocksQuestions)}
               style={{ borderBottomWidth: idx === QUESTIONS.length - 1 ? 1 : 0 }}
             />
           ))}

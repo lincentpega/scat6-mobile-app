@@ -3,8 +3,10 @@ import InputLabel from '@/components/InputLabel';
 import TextInputField from '@/components/TextInputField';
 import SubmitButton from '@/components/SubmitButton';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
+import { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
+import { saveSymptoms, loadSymptoms } from '@/services/medicalOfficeAssessmentStorageService';
 
 interface Symptom {
   id: string;
@@ -42,8 +44,8 @@ const SYMPTOMS: Symptom[] = [
 ];
 
 const YES_NO_QUESTIONS: YesNoQuestion[] = [
-  { key: 'physical', label: 'Ухудшается ли ваше состояние в результате физических нагрузок?' },
-  { key: 'mental', label: 'Ухудшается ли ваше состояние в результате умственной деятельности?' },
+  { key: 'worseAfterPhysicalActivity', label: 'Ухудшается ли ваше состояние в результате физических нагрузок?' },
+  { key: 'worseAfterMentalActivity', label: 'Ухудшается ли ваше состояние в результате умственной деятельности?' },
 ];
 
 function ScoreButtonGroup({ value, onChange }: { value: number; onChange: (value: number) => void }) {
@@ -84,32 +86,76 @@ function YesNoButtonGroup({ value, onChange }: { value: boolean | null; onChange
 }
 
 export default function SymptomsQuestionary() {
-  // Initialize state
-  const [scores, setScores] = useState<Record<string, number>>(() => 
-    Object.fromEntries(SYMPTOMS.map(s => [s.id, 0]))
-  );
+  // Initialize state with default values matching the Symptoms interface
+  const [symptoms, setSymptoms] = useState<MedicalOfficeAssessment.Symptoms>({
+    headache: 0,
+    headPressure: 0,
+    neckPain: 0,
+    nausea: 0,
+    dizziness: 0,
+    blurredVision: 0,
+    balance: 0,
+    lightSensitivity: 0,
+    noiseSensitivity: 0,
+    slowness: 0,
+    foggy: 0,
+    notRight: 0,
+    concentration: 0,
+    memory: 0,
+    fatigue: 0,
+    confusion: 0,
+    drowsiness: 0,
+    emotionality: 0,
+    irritability: 0,
+    depression: 0,
+    anxiety: 0,
+    sleepIssues: 0,
+    worseAfterPhysicalActivity: false,
+    worseAfterMentalActivity: false,
+    wellnessPercent: 100,
+    not100Reason: '',
+  });
   
-  const [yesNo, setYesNo] = useState<Record<string, boolean | null>>(() => 
-    Object.fromEntries(YES_NO_QUESTIONS.map(q => [q.key, null]))
-  );
-  
-  const [percent, setPercent] = useState<string>('');
-  const [not100Reason, setNot100Reason] = useState<string>('');
+  // Load saved data on component mount
+  useEffect(() => {
+    (async () => {
+      const loadedSymptoms = await loadSymptoms();
+      if (loadedSymptoms) {
+        console.log("Loaded symptoms data from storage:", JSON.stringify(loadedSymptoms, null, 2));
+        setSymptoms(loadedSymptoms);
+      }
+    })();
+  }, []);
 
   // Update symptom score
   const handleScoreChange = (id: string, value: number) => {
-    setScores(prev => ({ ...prev, [id]: value }));
+    setSymptoms(prev => ({ ...prev, [id]: value }));
   };
 
   // Update yes/no answer
   const handleYesNoChange = (key: string, value: boolean) => {
-    setYesNo(prev => ({ ...prev, [key]: value }));
+    setSymptoms(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Handle wellness percent change
+  const handlePercentChange = (text: string) => {
+    const numericValue = parseInt(text) || 0;
+    setSymptoms(prev => ({ ...prev, wellnessPercent: numericValue }));
+  };
+
+  const handleNot100ReasonChange = (text: string) => {
+    setSymptoms(prev => ({ ...prev, not100Reason: text }));
   };
 
   // Handle form submission
-  const handleSubmit = () => {
-    console.log({ scores, yesNo, percent, not100Reason });
-    router.push('/(testing-form)/orientation-assessment');
+  const handleSubmit = async () => {
+    try {
+      await saveSymptoms(symptoms);
+      console.log("Symptoms data saved to storage:", JSON.stringify(symptoms, null, 2));
+      router.push('/(testing-form)/orientation-assessment');
+    } catch (e) {
+      console.error("Failed to save symptoms data", e);
+    }
   };
 
   return (
@@ -122,7 +168,7 @@ export default function SymptomsQuestionary() {
             <View key={symptom.id} style={styles.symptomRow}>
               <InputLabel label={symptom.label} />
               <ScoreButtonGroup 
-                value={scores[symptom.id]} 
+                value={symptoms[symptom.id as keyof MedicalOfficeAssessment.Symptoms] as number} 
                 onChange={(value) => handleScoreChange(symptom.id, value)} 
               />
             </View>
@@ -134,7 +180,7 @@ export default function SymptomsQuestionary() {
             <View key={q.key} style={styles.yesNoRow}>
               <InputLabel label={q.label} />
               <YesNoButtonGroup 
-                value={yesNo[q.key]} 
+                value={symptoms[q.key as keyof MedicalOfficeAssessment.Symptoms] as boolean} 
                 onChange={(value) => handleYesNoChange(q.key, value)} 
               />
             </View>
@@ -145,8 +191,8 @@ export default function SymptomsQuestionary() {
           <InputLabel label="Если считать 100% абсолютно нормальным показателем, то на сколько вы оцениваете свое самочувствие в процентах?" />
           <TextInputField
             placeholder="Введите процент (например, 80)"
-            value={percent}
-            onChangeText={setPercent}
+            value={symptoms.wellnessPercent.toString()}
+            onChangeText={handlePercentChange}
             keyboardType="numeric"
             style={{ marginBottom: 10 }}
           />
@@ -154,8 +200,8 @@ export default function SymptomsQuestionary() {
           <InputLabel label="Если не на 100%, то почему?" />
           <TextInputField
             placeholder="Опишите причину..."
-            value={not100Reason}
-            onChangeText={setNot100Reason}
+            value={symptoms.not100Reason}
+            onChangeText={(text) => handleNot100ReasonChange(text)}
             multiline
             numberOfLines={3}
             style={{ height: 80 }}

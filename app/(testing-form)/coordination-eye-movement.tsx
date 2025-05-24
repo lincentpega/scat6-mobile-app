@@ -2,22 +2,31 @@ import CheckboxField from "@/components/CheckboxField";
 import ScrollViewKeyboardAwareContainer from "@/components/Container";
 import SubmitButton from "@/components/SubmitButton";
 import { StyleSheet, View, Text } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { router } from "expo-router";
+import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
+import { saveCoordinationEyeMovement, loadCoordinationEyeMovement } from "@/services/immediateAssessmentStorageService";
 
 export default function CoordinationEyeMovement() {
-    const [answers, setAnswers] = useState({
+    const [answers, setAnswers] = useState<ImmediateAssessment.CoordinationEyeMovement>({
         coordination: false,
-        eyeControl: false,
+        eyeMovement: false,
         normalEyeMovement: false,
     });
+
+    useEffect(() => {
+        (async () => {
+            const saved = await loadCoordinationEyeMovement();
+            if (saved) setAnswers(saved);
+        })();
+    }, []);
 
     const handleChange = (key: keyof typeof answers) => {
         setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleSubmit = () => {
-        console.log("Coordination and eye movement assessment submitted", answers);
+    const handleSubmit = async () => {
+        await saveCoordinationEyeMovement(answers);
         router.push("/(testing-form)/glasgow-scale");
     };
 
@@ -32,8 +41,8 @@ export default function CoordinationEyeMovement() {
                 />
                 <CheckboxField
                     label="Может ли пациент смотреть из стороны в сторону и вверх-вниз, не двигая головой или шеей, без двоения в глазах?"
-                    checked={answers.eyeControl}
-                    onChange={() => handleChange('eyeControl')}
+                    checked={answers.eyeMovement}
+                    onChange={() => handleChange('eyeMovement')}
                     style={{ borderBottomWidth: 0 }}
                 />
                 <CheckboxField

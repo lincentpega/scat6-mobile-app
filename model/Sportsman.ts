@@ -1,5 +1,10 @@
 import { Gender, LeadingHand } from './enums';
 
+export interface PreviousHeadInjuries {
+  wasDiagnosed: boolean;
+  additionalInfo?: string;
+}
+
 export interface Sportsman {
   id?: number;
   fullName: string;
@@ -16,4 +21,14 @@ export interface Sportsman {
   inspectionDate?: string; // ISO date string
   injuryDate?: string; // ISO date string
   injuryTime?: string; // ISO time string
+  previousHeadInjuries?: PreviousHeadInjuries;
+  migraines?: boolean;
+  learningDisabilities?: boolean;
+  adhd?: boolean;
+  depressionAnxiety?: boolean;
+  currentMedications?: string;
+  numberOfBrainInjuries?: number;
+  lastBrainInjuryDate?: string;
+  brainInjurySymptoms?: string;
+  daysOfRecovery?: number;
 } 

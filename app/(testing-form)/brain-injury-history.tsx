@@ -1,19 +1,44 @@
 import ScrollViewKeyboardAwareContainer from "@/components/Container";
 import SubmitButton from "@/components/SubmitButton";
 import TextInputField from "@/components/TextInputField";
-import { useState } from "react";
+import CustomDatePicker from "@/components/CustomDatePicker";
+import { useState, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import type { Sportsman } from "@/model/Sportsman";
+import { saveAthlete, loadAthlete } from "@/services/athleteStorageService";
 
 export default function BrainInjuryHistory() {
-    const [numberOfBrainInjuries, setNumberOfBrainInjuries] = useState("");
-    const [lastBrainInjuryDate, setLastBrainInjuryDate] = useState("");
-    const [symptoms, setSymptoms] = useState("");
-    const [daysOfRecovery, setDaysOfRecovery] = useState("");
+    const [athlete, setAthlete] = useState<Sportsman | null>(null);
 
-    const handleNextStep = () => {
-        console.log("submit brain injury history");
+    useEffect(() => {
+        (async () => {
+            const loadedAthlete = await loadAthlete();
+            if (loadedAthlete) {
+                setAthlete(loadedAthlete);
+            } else {
+                // Initialize with empty athlete if none exists
+                setAthlete({
+                    fullName: '',
+                    birthDate: '',
+                    gender: 'MALE' as any,
+                    leadingHand: 'RIGHT' as any,
+                    sportType: '',
+                });
+            }
+        })();
+    }, []);
+
+    const handleNextStep = async () => {
+        if (athlete) {
+            await saveAthlete(athlete);
+            console.log("Brain injury history saved", athlete);
+        }
         router.push("/(testing-form)/observable-signs");
+    }
+
+    if (!athlete) {
+        return null; // Loading state
     }
 
     return (
@@ -25,31 +50,35 @@ export default function BrainInjuryHistory() {
                         placeholder="Введите количество сотрясений"
                         keyboardType="number-pad"
                         required={true}
-                        value={numberOfBrainInjuries}
+                        value={athlete.numberOfBrainInjuries?.toString() ?? ''}
                         onChangeText={(text) => {
                             if (/^\d*$/.test(text)) {
-                                setNumberOfBrainInjuries(text);
+                                setAthlete(prev => prev ? { ...prev, numberOfBrainInjuries: text ? parseInt(text) : undefined } : null);
                             }
                         }}
                     />
                 </View>
                 <View style={styles.inputField}>
-                    <TextInputField
+                    <CustomDatePicker
                         label="Когда было последнее сотрясение мозга"
-                        placeholder="Введите дату последнего сотрясения"
-                        value={lastBrainInjuryDate}
-                        onChangeText={setLastBrainInjuryDate}
-                        keyboardType="numbers-and-punctuation"
+                        value={athlete.lastBrainInjuryDate}
+                        onValueChange={(isoDate) => setAthlete(prev => prev ? { ...prev, lastBrainInjuryDate: isoDate } : null)}
+                        placeholder="Выберите дату последнего сотрясения"
                         required={true}
+                        limitToPastOrToday={true}
                     />
                 </View>
                 <View style={styles.inputField}>
                     <TextInputField
                         label="Дней восстановления после последнего сотрясения"
                         placeholder="Введите количество дней"
-                        value={daysOfRecovery}
-                        onChangeText={setDaysOfRecovery}
-                        keyboardType="numbers-and-punctuation"
+                        value={athlete.daysOfRecovery?.toString() ?? ''}
+                        onChangeText={(text) => {
+                            if (/^\d*$/.test(text)) {
+                                setAthlete(prev => prev ? { ...prev, daysOfRecovery: text ? parseInt(text) : undefined } : null);
+                            }
+                        }}
+                        keyboardType="number-pad"
                         required={true}
                     />
                 </View>
@@ -59,9 +88,9 @@ export default function BrainInjuryHistory() {
                         placeholder="Опишите основные симптомы"
                         multiline={true}
                         numberOfLines={4}
-                        value={symptoms}
+                        value={athlete.brainInjurySymptoms ?? ''}
                         style={{ height: 100 }}
-                        onChangeText={setSymptoms}
+                        onChangeText={(text) => setAthlete(prev => prev ? { ...prev, brainInjurySymptoms: text } : null)}
                         required={true}
                     />
                 </View>

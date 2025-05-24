@@ -2,7 +2,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as SecureStore  from 'expo-secure-store';
 import {jwtDecode} from 'jwt-decode';
 
-const issuer   = 'http://172.20.10.3:8788/realms/scat6-app';
+const issuer   = 'http://192.168.0.108:8788/realms/scat6-app';
 const clientId = 'mobile-app';
 const scheme   = 'scat6-app';
 const discoveryPromise = AuthSession.fetchDiscoveryAsync(issuer);
@@ -71,6 +71,7 @@ export async function getValidAccessToken(): Promise<string | null> {
 
 export async function signInAsync(): Promise<boolean> {
   const redirectUri = AuthSession.makeRedirectUri({ scheme });
+  console.log('redirectUri', redirectUri);
   const authRequest = new AuthSession.AuthRequest({
     clientId,
     redirectUri,
@@ -81,7 +82,9 @@ export async function signInAsync(): Promise<boolean> {
     },
   });
   const discovery = await discoveryPromise;
+  console.log('discovery', discovery);
   await authRequest.makeAuthUrlAsync(discovery);
+  console.log('authRequest', authRequest);
   const result = await authRequest.promptAsync(discovery);
   if (result.type !== 'success') return false;
 

@@ -2,23 +2,32 @@ import CheckboxField from "@/components/CheckboxField";
 import ScrollViewKeyboardAwareContainer from "@/components/Container";
 import SubmitButton from "@/components/SubmitButton";
 import { StyleSheet, View, Text } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { router } from "expo-router";
+import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
+import { saveNeckSpineAssessment, loadNeckSpineAssessment } from "@/services/immediateAssessmentStorageService";
 
 export default function NeckSpineAssessment() {
-    const [answers, setAnswers] = useState({
+    const [answers, setAnswers] = useState<ImmediateAssessment.NeckSpineAssessment>({
         painAtRest: false,
         tenderness: false,
         fullActiveMovement: false,
         normalStrengthSensation: false,
     });
 
+    useEffect(() => {
+        (async () => {
+            const saved = await loadNeckSpineAssessment();
+            if (saved) setAnswers(saved);
+        })();
+    }, []);
+
     const handleChange = (key: keyof typeof answers) => {
         setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleSubmit = () => {
-        console.log("Neck spine assessment submitted", answers);
+    const handleSubmit = async () => {
+        await saveNeckSpineAssessment(answers);
         router.push("/(testing-form)/coordination-eye-movement");
     };
 

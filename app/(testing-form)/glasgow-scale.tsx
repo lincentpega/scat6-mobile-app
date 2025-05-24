@@ -1,8 +1,10 @@
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
+import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
+import { saveGlasgowScale, loadGlasgowScale } from "@/services/immediateAssessmentStorageService";
 
 const EYE_RESPONSES = [
   { label: 'Глаза не открываются', value: 'none' },
@@ -45,24 +47,33 @@ function RoundButtonGroup({ options, value, onChange }: { options: { label: stri
 }
 
 export default function GlasgowScale() {
-  const [eye, setEye] = useState(EYE_RESPONSES[0].value);
-  const [verbal, setVerbal] = useState(VERBAL_RESPONSES[0].value);
-  const [motor, setMotor] = useState(MOTOR_RESPONSES[0].value);
+  const [answers, setAnswers] = useState<ImmediateAssessment.GlasgowScale>({
+    eye: EYE_RESPONSES[0].value,
+    verbal: VERBAL_RESPONSES[0].value,
+    motor: MOTOR_RESPONSES[0].value,
+  });
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    (async () => {
+      const saved = await loadGlasgowScale();
+      if (saved) setAnswers(saved);
+    })();
+  }, []);
+
+  const handleSubmit = async () => {
+    await saveGlasgowScale(answers);
     router.push('/(testing-form)/maddocks-questions');
-    console.log('Glasgow scale submitted', { eye, verbal, motor });
   };
 
   return (
     <ScrollViewKeyboardAwareContainer contentContainerStyle={{ alignItems: 'flex-start' }}>
       <View style={styles.inputContainer}>
         <Text style={styles.sectionLabel}>Зрительная реакция (E)</Text>
-        <RoundButtonGroup options={EYE_RESPONSES} value={eye} onChange={setEye} />
+        <RoundButtonGroup options={EYE_RESPONSES} value={answers.eye} onChange={(value) => setAnswers(prev => ({ ...prev, eye: value }))} />
         <Text style={styles.sectionLabel}>Речевая реакция (V)</Text>
-        <RoundButtonGroup options={VERBAL_RESPONSES} value={verbal} onChange={setVerbal} />
+        <RoundButtonGroup options={VERBAL_RESPONSES} value={answers.verbal} onChange={(value) => setAnswers(prev => ({ ...prev, verbal: value }))} />
         <Text style={styles.sectionLabel}>Двигательная реакция (M)</Text>
-        <RoundButtonGroup options={MOTOR_RESPONSES} value={motor} onChange={setMotor} />
+        <RoundButtonGroup options={MOTOR_RESPONSES} value={answers.motor} onChange={(value) => setAnswers(prev => ({ ...prev, motor: value }))} />
         <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 20 }} />
       </View>
     </ScrollViewKeyboardAwareContainer>

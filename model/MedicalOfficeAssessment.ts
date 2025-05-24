@@ -1,8 +1,6 @@
-import { Sportsman } from './Sportsman';
-
 export interface MedicalOfficeAssessment {
-  sportsmanInfo: MedicalOfficeAssessment.SportsmanInfo;
   symptoms: MedicalOfficeAssessment.Symptoms;
+  orientationAssessment: MedicalOfficeAssessment.OrientationAssessment;
   cognitiveFunctions: MedicalOfficeAssessment.CognitiveFunctions;
   shortTermMemory: MedicalOfficeAssessment.ShortTermMemory[];
   concentrationNumbers: MedicalOfficeAssessment.ConcentrationNumbers[];
@@ -15,19 +13,6 @@ export interface MedicalOfficeAssessment {
 }
 
 export namespace MedicalOfficeAssessment {
-  export interface SportsmanInfo {
-    previousHeadInjuries: PreviousHeadInjuries;
-    migraines: boolean;
-    learningDisabilities: boolean;
-    adhd: boolean;
-    depressionAnxiety: boolean;
-    currentMedications?: string;
-  }
-  export interface PreviousHeadInjuries {
-    wasDiagnosed: boolean;
-    additionalInfo?: string;
-  }
-
   export interface Symptoms {
     headache: number;
     headPressure: number;
@@ -54,6 +39,16 @@ export namespace MedicalOfficeAssessment {
     worseAfterPhysicalActivity: boolean;
     worseAfterMentalActivity: boolean;
     wellnessPercent: number;
+    not100Reason: string;
+  }
+
+  export interface OrientationAssessment {
+    month: boolean;
+    date: boolean;
+    weekday: boolean;
+    year: boolean;
+    time: boolean;
+    score: number;
   }
 
   export interface CognitiveFunctions {

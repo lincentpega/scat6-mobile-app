@@ -11,6 +11,7 @@ import { Gender, LeadingHand } from '@/model/enums';
 import { saveAthlete, loadAthlete } from '@/services/athleteStorageService';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import CustomTimePicker from '@/components/CustomTimePicker';
+import CheckboxField from '@/components/CheckboxField';
 
 // Helper to parse "DD.MM.YYYY" to a Date object
 const parseRuDateString = (dateString: string): Date | null => {
@@ -58,6 +59,12 @@ export default function AthleteInfo() {
     inspectionDate: undefined, // Stored as ISO string or undefined
     injuryDate: undefined, // Stored as ISO string or undefined
     injuryTime: undefined, // Stored as HH:mm string or undefined
+    previousHeadInjuries: undefined,
+    migraines: undefined,
+    learningDisabilities: undefined,
+    adhd: undefined,
+    depressionAnxiety: undefined,
+    currentMedications: undefined,
   });
 
   useEffect(() => {
@@ -224,6 +231,78 @@ export default function AthleteInfo() {
             onChangeText={text => setAthlete(a => ({ ...a, spokenLanguage: text }))}
           />
         </View>
+
+        <CheckboxField
+          label="Были ли диагностированы предыдущие травмы головы?"
+          checked={athlete.previousHeadInjuries?.wasDiagnosed ?? false}
+          onChange={() => setAthlete(a => ({
+            ...a,
+            previousHeadInjuries: {
+              wasDiagnosed: !(a.previousHeadInjuries?.wasDiagnosed ?? false),
+              additionalInfo: a.previousHeadInjuries?.additionalInfo
+            }
+          }))}
+          style={{ marginBottom: 10 }}
+        />
+
+        {athlete.previousHeadInjuries?.wasDiagnosed && (
+          <View style={styles.inputField}>
+            <TextInputField
+              label="Дополнительная информация о травмах головы"
+              placeholder="Введите дополнительную информацию"
+              value={athlete.previousHeadInjuries?.additionalInfo ?? ''}
+              onChangeText={text => setAthlete(a => ({
+                ...a,
+                previousHeadInjuries: {
+                  wasDiagnosed: a.previousHeadInjuries?.wasDiagnosed ?? false,
+                  additionalInfo: text
+                }
+              }))}
+              multiline={true}
+              numberOfLines={3}
+            />
+          </View>
+        )}
+
+        <CheckboxField
+          label="Мигрени"
+          checked={athlete.migraines ?? false}
+          onChange={() => setAthlete(a => ({ ...a, migraines: !(a.migraines ?? false) }))}
+          style={{ marginBottom: 10 }}
+        />
+
+        <CheckboxField
+          label="Нарушения обучаемости"
+          checked={athlete.learningDisabilities ?? false}
+          onChange={() => setAthlete(a => ({ ...a, learningDisabilities: !(a.learningDisabilities ?? false) }))}
+          style={{ marginBottom: 10 }}
+        />
+
+        <CheckboxField
+          label="СДВГ (синдром дефицита внимания и гиперактивности)"
+          checked={athlete.adhd ?? false}
+          onChange={() => setAthlete(a => ({ ...a, adhd: !(a.adhd ?? false) }))}
+          style={{ marginBottom: 10 }}
+        />
+
+        <CheckboxField
+          label="Депрессия/тревожность"
+          checked={athlete.depressionAnxiety ?? false}
+          onChange={() => setAthlete(a => ({ ...a, depressionAnxiety: !(a.depressionAnxiety ?? false) }))}
+          style={{ marginBottom: 10 }}
+        />
+
+        <View style={[styles.inputField, { marginBottom: 20 }]}>
+          <TextInputField
+            label="Текущие медикаменты"
+            placeholder="Введите принимаемые медикаменты"
+            value={athlete.currentMedications ?? ''}
+            onChangeText={text => setAthlete(a => ({ ...a, currentMedications: text }))}
+            multiline={true}
+            numberOfLines={2}
+          />
+        </View>
+
         <SubmitButton style={{ marginBottom: 20 }} onPress={handleNextStep} text="Следующий шаг" />
       </View>
     </ScrollViewKeyboardAwareContainer>

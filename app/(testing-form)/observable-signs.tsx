@@ -3,10 +3,12 @@ import ScrollViewKeyboardAwareContainer from "@/components/Container";
 import SubmitButton from "@/components/SubmitButton";
 import { StyleSheet, View, Text } from "react-native";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
+import { saveObservableSigns, loadObservableSigns } from "@/services/immediateAssessmentStorageService";
 
 export default function ObservableSigns() {
-    const [signs, setSigns] = useState({
+    const [signs, setSigns] = useState<ImmediateAssessment.ObservableSigns>({
         immobile: false,
         unprotectedFall: false,
         unsteadyGait: false,
@@ -17,12 +19,20 @@ export default function ObservableSigns() {
         highRiskMechanism: false,
     });
 
+    // Load saved observable signs on mount
+    useEffect(() => {
+        (async () => {
+            const saved = await loadObservableSigns();
+            if (saved) setSigns(saved);
+        })();
+    }, []);
+
     const handleChange = (key: keyof typeof signs) => {
         setSigns((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleSubmit = () => {
-        console.log("Submit observable signs", signs);
+    const handleSubmit = async () => {
+        await saveObservableSigns(signs);
         router.push("/(testing-form)/neck-spine-assessment");
     };
 
