@@ -6,7 +6,7 @@ import { StyleSheet, View, Text } from "react-native";
 export default function RedFlags() {
     const handleSubmit = () => {
         console.log("Submit red flags");
-        router.push("/(testing-form)/athlete-info");
+        router.push("/(athlete)/athlete-info");
     }
 
     return (

@@ -1,4 +1,5 @@
 import { Gender, LeadingHand } from './enums';
+import { PagedResult } from './common';
 
 export interface PreviousHeadInjuries {
   wasDiagnosed: boolean;
@@ -6,7 +7,7 @@ export interface PreviousHeadInjuries {
 }
 
 export interface Sportsman {
-  id?: number;
+  id?: string;
   fullName: string;
   birthDate: string; // ISO date string
   passport?: string;
@@ -31,4 +32,12 @@ export interface Sportsman {
   lastBrainInjuryDate?: string;
   brainInjurySymptoms?: string;
   daysOfRecovery?: number;
-} 
+}
+
+export interface SportsmanSearchItem {
+  id: string;
+  fullName: string;
+  birthDate: string;
+}
+
+export type SportsmanSearchResult = PagedResult<SportsmanSearchItem>;

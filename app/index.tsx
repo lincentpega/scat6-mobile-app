@@ -1,10 +1,8 @@
-// app/(home)/HomeScreen.tsx
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import KeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import { useAuth } from '@/context/AuthContext';
-import { router } from 'expo-router';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
@@ -16,9 +14,6 @@ export default function HomeScreen() {
     setLoading(false);
   };
 
-  const handleGoToForm = async () => {
-    router.push('/(testing-form)/red-flags');
-  }
 
   const handleLogoutPress = async () => {
     setLoading(true);
@@ -46,10 +41,7 @@ export default function HomeScreen() {
 
       <View style={styles.inputContainer}>
         {isUserLoggedIn ? (
-          <> 
-            <SubmitButton style={{ marginBottom: 10 }} onPress={handleGoToForm} text="Перейти к форме" />
-            <SubmitButton onPress={handleLogoutPress} text="Выйти" />
-          </>
+          <SubmitButton onPress={handleLogoutPress} text="Выйти" />
         ) : (
           <SubmitButton onPress={handleSignInPress} text="Войти" />
         )}

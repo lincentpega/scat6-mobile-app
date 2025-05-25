@@ -1,4 +1,3 @@
-// layouts/RootLayout.tsx
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Tabs } from 'expo-router';
@@ -9,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';  // <-- импортируем хук
+import { AthleteProvider } from '@/contexts/AthleteContext';
 import { useEffect } from 'react';
 
 // Не даём сплэш-скрину закрыться до загрузки шрифтов
@@ -59,6 +59,16 @@ function LayoutContent() {
             tabBarIcon: HomeTabIcon,
           }}
         />
+        <Tabs.Screen
+          name="(athlete)"
+          options={{
+            title: 'Спортсмен',
+            tabBarLabel: 'Спортсмен',
+            headerShown: false,
+            href: isUserLoggedIn ? undefined : null,
+            tabBarIcon: FormTabIcon,
+          }}
+        />
           <Tabs.Screen
             name="(testing-form)"
             options={{
@@ -78,7 +88,9 @@ function LayoutContent() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <LayoutContent /> 
+      <AthleteProvider>
+        <LayoutContent /> 
+      </AthleteProvider>
     </AuthProvider>
   );
 }

@@ -6,33 +6,29 @@ import { useState, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import type { Sportsman } from "@/model/Sportsman";
-import { saveAthlete, loadAthlete } from "@/services/athleteStorageService";
+import { useAthleteContext } from "@/contexts/AthleteContext";
+import { fetchAthlete } from "@/services/apiService";
 
 export default function BrainInjuryHistory() {
+    const { athleteId } = useAthleteContext();
     const [athlete, setAthlete] = useState<Sportsman | null>(null);
 
     useEffect(() => {
         (async () => {
-            const loadedAthlete = await loadAthlete();
-            if (loadedAthlete) {
-                setAthlete(loadedAthlete);
-            } else {
-                // Initialize with empty athlete if none exists
-                setAthlete({
-                    fullName: '',
-                    birthDate: '',
-                    gender: 'MALE' as any,
-                    leadingHand: 'RIGHT' as any,
-                    sportType: '',
-                });
+            if (athleteId) {
+                try {
+                    const serverAthleteData = await fetchAthlete(athleteId);
+                    setAthlete(serverAthleteData);
+                } catch (error) {
+                    console.error("Error loading athlete data:", error);
+                }
             }
         })();
-    }, []);
+    }, [athleteId]);
 
     const handleNextStep = async () => {
         if (athlete) {
-            await saveAthlete(athlete);
-            console.log("Brain injury history saved", athlete);
+            console.log("Moving to next step with brain injury history:", athlete);
         }
         router.push("/(testing-form)/observable-signs");
     }

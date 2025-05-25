@@ -1,37 +1,32 @@
+import axios from 'axios';
 import { getValidAccessToken } from './authService';
-import { Sportsman } from '@/model/Sportsman';
+import { Sportsman, SportsmanSearchResult } from '@/model/Sportsman';
 import { ImmediateAssessment } from '@/model/ImmediateAssessment';
 
 // Base API URL - using the same IP as auth service
-const API_BASE_URL = process.env.API_BASE_URL ?? 'http://192.168.0.108:8788';
+const API_BASE_URL = process.env.API_BASE_URL ?? 'http://172.20.10.2:8080';
 
 /**
- * Generic API request function with authentication
+ * Generic API request function with authentication using axios
  */
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function apiRequest<T>(endpoint: string, options: any = {}): Promise<T> {
   const accessToken = await getValidAccessToken();
   if (!accessToken) {
     throw new Error('No valid access token available');
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
-  const response = await fetch(url, {
-    ...options,
+  const response = await axios({
+    url,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${accessToken}`,
       ...options.headers,
     },
+    ...options,
   });
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-  }
-
-  return response.json();
+  return response.data;
 }
 
 /**
@@ -40,7 +35,7 @@ async function apiRequest<T>(
 export async function sendSportsman(sportsman: Sportsman): Promise<Sportsman> {
   return apiRequest<Sportsman>('/api/sportsmans', {
     method: 'POST',
-    body: JSON.stringify(sportsman),
+    data: sportsman,
   });
 }
 
@@ -52,6 +47,28 @@ export async function sendImmediateAssessment(
 ): Promise<ImmediateAssessment> {
   return apiRequest<ImmediateAssessment>('/api/immediate-assessments', {
     method: 'POST',
-    body: JSON.stringify(assessment),
+    data: assessment,
+  });
+}
+
+export async function fetchAthletes(page: number, limit: number, fullNamePrefix?: string): Promise<SportsmanSearchResult> {
+  const params: any = {
+    page,
+    limit,
+  };
+  
+  if (fullNamePrefix) {
+    params.fullNamePrefix = fullNamePrefix;
+  }
+
+  return apiRequest<SportsmanSearchResult>('/api/sportsmans', {
+    method: 'GET',
+    params,
+  });
+}
+
+export async function fetchAthlete(id: string): Promise<Sportsman> {
+  return apiRequest<Sportsman>(`/api/sportsmans/${id}`, {
+    method: 'GET',
   });
 }

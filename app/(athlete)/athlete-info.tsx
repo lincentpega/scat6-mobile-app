@@ -1,50 +1,24 @@
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import TextInputField from '@/components/TextInputField';
 import React, { useState, useEffect } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, Text } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import LabeledPicker from '@/components/LabeledPicker';
 import SubmitButton from '@/components/SubmitButton';
 import { router } from "expo-router";
 import { Sportsman } from '@/model/Sportsman';
 import { Gender, LeadingHand } from '@/model/enums';
-import { saveAthlete, loadAthlete } from '@/services/athleteStorageService';
+import { fetchAthlete, sendSportsman } from '@/services/apiService';
+import { useAthleteContext } from '@/contexts/AthleteContext';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import CustomTimePicker from '@/components/CustomTimePicker';
 import CheckboxField from '@/components/CheckboxField';
 
-// Helper to parse "DD.MM.YYYY" to a Date object
-const parseRuDateString = (dateString: string): Date | null => {
-  if (!dateString || typeof dateString !== 'string') return null;
-  const parts = dateString.split('.');
-  if (parts.length === 3) {
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-    const year = parseInt(parts[2], 10);
-    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-      const dateObj = new Date(year, month, day);
-      // Basic validation: check if the date parts were reasonable
-      if (dateObj.getFullYear() === year && dateObj.getMonth() === month && dateObj.getDate() === day) {
-        return dateObj;
-      }
-    }
-  }
-  return null;
-};
-
-// Helper to display formatted date or placeholder
-const displayDate = (isoDateString: string | undefined, placeholder: string) => {
-  if (isoDateString && typeof isoDateString === 'string') {
-    const dateObj = new Date(isoDateString); // Expects ISO string
-    if (!isNaN(dateObj.getTime())) {
-      return dateObj.toLocaleDateString('ru-RU'); // DD.MM.YYYY
-    }
-  }
-  return placeholder;
-};
-
 export default function AthleteInfo() {
+  const { athleteId } = useAthleteContext();
+  
   const [athlete, setAthlete] = useState<Sportsman>({
+    id: undefined,
     fullName: '',
     birthDate: '', // Stored as ISO string or empty string (as per interface)
     passport: undefined,
@@ -69,42 +43,61 @@ export default function AthleteInfo() {
 
   useEffect(() => {
     (async () => {
-      const loadedAthleteData = await loadAthlete();
-      if (loadedAthleteData) {
-        console.log("Loaded athlete data from storage (athlete-info.tsx):", JSON.stringify(loadedAthleteData, null, 2));
-        
-        const processedAthlete: Sportsman = { ...loadedAthleteData };
+      try {
+        console.log("athleteId from context:", athleteId)
 
-        // Convert DD.MM.YYYY from storage to ISO for consistent state
-        const convertToIsoIfNeeded = (dateString: string | undefined) => {
-            if (!dateString) return undefined;
-            const parsedRu = parseRuDateString(dateString);
-            if (parsedRu) return parsedRu.toISOString();
-            // If not DD.MM.YYYY, assume it might already be ISO or other format new Date() handles
-            if (!isNaN(new Date(dateString).getTime())) return new Date(dateString).toISOString();
-            return dateString; // Return original if unparseable, CustomDatePicker will show placeholder
-        };
+        if (athleteId) {
+          // Load athlete data from server using API
+          console.log("Loading athlete data from server with ID:", athleteId);
+          const serverAthleteData = await fetchAthlete(athleteId);
 
-        processedAthlete.birthDate = convertToIsoIfNeeded(loadedAthleteData.birthDate) || '';
-        processedAthlete.inspectionDate = convertToIsoIfNeeded(loadedAthleteData.inspectionDate);
-        processedAthlete.injuryDate = convertToIsoIfNeeded(loadedAthleteData.injuryDate);
-        // injuryTime is already HH:mm, which CustomTimePicker expects
-        
-        setAthlete(processedAthlete);
-        console.log("Processed athlete data for state (athlete-info.tsx):", JSON.stringify(processedAthlete, null, 2));
+          if (serverAthleteData) {
+            console.log("Loaded athlete data from server (athlete-info.tsx):", JSON.stringify(serverAthleteData, null, 2));
 
+            // Server data should already be in correct format, but ensure dates are ISO strings
+            const processedAthlete: Sportsman = {
+              ...serverAthleteData,
+              id: athleteId,
+              birthDate: serverAthleteData.birthDate || '',
+            };
+
+            setAthlete(processedAthlete);
+            console.log("Processed athlete data from server (athlete-info.tsx):", JSON.stringify(processedAthlete, null, 2));
+            return;
+          }
+        }
+
+        // No fallback needed - user should select athlete from search
+      } catch (error) {
+        console.error("Error loading athlete data:", error);
+        // No fallback - user should select athlete from search
       }
     })();
-  }, []);
+  }, [athleteId]);
 
-  const handleNextStep = async () => {
+  const handleSaveAthlete = async () => {
     try {
-      await saveAthlete(athlete); 
-      console.log("Athlete info saved to storage (athlete-info.tsx):", JSON.stringify(athlete, null, 2));
-      router.push("/(testing-form)/brain-injury-history");
+      console.log("Saving athlete data:", JSON.stringify(athlete, null, 2));
+      const savedAthlete = await sendSportsman(athlete);
+      console.log("Successfully saved athlete data:", JSON.stringify(savedAthlete, null, 2));
+      
+      // Update local state with server response
+      setAthlete(savedAthlete);
+      
+      // Show success feedback (you can add a toast/alert here if needed)
+      console.log("Athlete data saved successfully");
     } catch (e) {
-      console.error("Failed to save athlete info", e);
+      console.error("Failed to save athlete data", e);
+      // Show error feedback (you can add a toast/alert here if needed)
     }
+  }
+
+  const handleBasicTesting = () => {
+    router.push("/(testing-form)/symptoms-questionary");
+  }
+
+  const handlePostInjuryTesting = () => {
+    router.push("/(testing-form)/observable-signs");
   }
 
   return (
@@ -168,7 +161,7 @@ export default function AthleteInfo() {
           value={athlete.birthDate} // birthDate can be '' which CustomDatePicker should handle
           onValueChange={isoDate => setAthlete(prev => ({ ...prev, birthDate: isoDate || '' }))} // Ensure empty string if undefined
           placeholder="Выберите дату рождения"
-          required={false} 
+          required={false}
           limitToPastOrToday={true}
         />
 
@@ -242,7 +235,7 @@ export default function AthleteInfo() {
               additionalInfo: a.previousHeadInjuries?.additionalInfo
             }
           }))}
-          style={{ marginBottom: 10 }}
+          style={!athlete.previousHeadInjuries?.wasDiagnosed ? { borderBottomWidth: 0 } : {marginBottom: 10}}
         />
 
         {athlete.previousHeadInjuries?.wasDiagnosed && (
@@ -268,21 +261,21 @@ export default function AthleteInfo() {
           label="Мигрени"
           checked={athlete.migraines ?? false}
           onChange={() => setAthlete(a => ({ ...a, migraines: !(a.migraines ?? false) }))}
-          style={{ marginBottom: 10 }}
+          style={{ borderBottomWidth: 0 }}
         />
 
         <CheckboxField
           label="Нарушения обучаемости"
           checked={athlete.learningDisabilities ?? false}
           onChange={() => setAthlete(a => ({ ...a, learningDisabilities: !(a.learningDisabilities ?? false) }))}
-          style={{ marginBottom: 10 }}
+          style={{ borderBottomWidth: 0 }}
         />
 
         <CheckboxField
           label="СДВГ (синдром дефицита внимания и гиперактивности)"
           checked={athlete.adhd ?? false}
           onChange={() => setAthlete(a => ({ ...a, adhd: !(a.adhd ?? false) }))}
-          style={{ marginBottom: 10 }}
+          style={{ borderBottomWidth: 0 }}
         />
 
         <CheckboxField
@@ -303,7 +296,21 @@ export default function AthleteInfo() {
           />
         </View>
 
-        <SubmitButton style={{ marginBottom: 20 }} onPress={handleNextStep} text="Следующий шаг" />
+        <SubmitButton style={{ marginBottom: 20 }} onPress={handleSaveAthlete} text="Сохранить" />
+        
+        <Text style={styles.testingLabel}>ТЕСТИРОВАНИЕ</Text>
+        
+        <SubmitButton 
+          style={{ marginBottom: 10 }} 
+          onPress={handleBasicTesting} 
+          text="Базовое" 
+        />
+        
+        <SubmitButton 
+          style={{ marginBottom: 20 }} 
+          onPress={handlePostInjuryTesting} 
+          text="После травмы" 
+        />
       </View>
     </ScrollViewKeyboardAwareContainer>
   );
@@ -318,5 +325,13 @@ const styles = StyleSheet.create({
   inputField: {
     width: "100%",
     marginBottom: 20,
+  },
+  testingLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 10,
+    marginBottom: 15,
+    textAlign: 'center',
   },
 }); 

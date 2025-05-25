@@ -4,13 +4,6 @@ export default function TestingFormLayout() {
   return (
     <Stack>
       <Stack.Screen
-        name="athlete-info"
-        options={{
-          title: "Информация о спортсмене",
-          headerBackTitle: "Назад"
-        }}
-      />
-      <Stack.Screen
         name="brain-injury-history"
         options={{
           title: "История травм головного мозга",

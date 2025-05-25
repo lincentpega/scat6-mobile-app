@@ -2,7 +2,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as SecureStore  from 'expo-secure-store';
 import {jwtDecode} from 'jwt-decode';
 
-const issuer   = 'http://192.168.0.108:8788/realms/scat6-app';
+const issuer   = 'http://172.20.10.2:8788/realms/scat6-app';
 const clientId = 'mobile-app';
 const scheme   = 'scat6-app';
 const discoveryPromise = AuthSession.fetchDiscoveryAsync(issuer);
@@ -30,7 +30,6 @@ export async function isLoggedIn(): Promise<boolean> {
 
 async function storeTokenResponse(res: AuthSession.TokenResponse) {
   const expireAt = Date.now() + (res.expiresIn ?? 3600) * 1000;
-  console.log('access token', res.accessToken);
   await SecureStore.setItemAsync(KEY_ACCESS,  res.accessToken);
   if (!res.refreshToken) throw new Error('Refresh token is required');
   await SecureStore.setItemAsync(KEY_REFRESH, res.refreshToken);
@@ -43,6 +42,8 @@ export async function getValidAccessToken(): Promise<string | null> {
     SecureStore.getItemAsync(KEY_REFRESH),
     SecureStore.getItemAsync(KEY_EXPIRE),
   ]);
+
+  console.log('access', access);
 
   if (!access || !refresh || !expireStr) return null;
   const expireAt = Number(expireStr);
