@@ -1,166 +1,143 @@
 import React, { useState } from 'react';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
-import TextInputField from '@/components/TextInputField';
+// import TextInputField from '@/components/TextInputField'; // No longer needed for these fields
 import SubmitButton from '@/components/SubmitButton';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
+import { useFormContext } from '@/contexts/FormContext';
+import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
+import TimedClickerField from '@/components/TimedClickerField'; // Import the new component
+import TextInputField from '@/components/TextInputField'; // Still needed for Total fields
 
 export default function CoordinationAndBalanceMBESS() {
-  // Main mBESS
-  const [doubleLeg, setDoubleLeg] = useState('');
-  const [tandem, setTandem] = useState('');
-  const [singleLeg, setSingleLeg] = useState('');
-  // Foam (optional)
-  const [foamDoubleLeg, setFoamDoubleLeg] = useState('');
-  const [foamTandem, setFoamTandem] = useState('');
-  const [foamSingleLeg, setFoamSingleLeg] = useState('');
+  const { medicalOfficeAssessment, updateMbessTestResults } = useFormContext();
 
-  // Validation function for inputs with max 10
-  const validateMaxTen = (value: string, setter: (value: string) => void) => {
-    const numValue = parseInt(value);
-    if (value === '') {
-      setter('');
-    } else if (!isNaN(numValue) && numValue >= 0 && numValue <= 10) {
-      setter(numValue.toString());
-    }
-  };
+  const MBESS_TIMER_DURATION = 20;
+  const MAX_ERRORS = 10;
+  const SOUND_INTERVAL = 20; // Play sound every 5 seconds
+
+  // Main mBESS - initialize from context or default to 0 errors
+  const [doubleLegErrors, setDoubleLegErrors] = useState(medicalOfficeAssessment.mbessTestResults?.casually.standsOnBothFeet || 0);
+  const [tandemErrors, setTandemErrors] = useState(medicalOfficeAssessment.mbessTestResults?.casually.tandemPosition || 0);
+  const [singleLegErrors, setSingleLegErrors] = useState(medicalOfficeAssessment.mbessTestResults?.casually.standsOnOneFeet || 0);
+  // Foam (optional) - initialize from context or default to 0 errors
+  const [foamDoubleLegErrors, setFoamDoubleLegErrors] = useState(medicalOfficeAssessment.mbessTestResults?.styrofoam?.standsOnBothFeet || 0);
+  const [foamTandemErrors, setFoamTandemErrors] = useState(medicalOfficeAssessment.mbessTestResults?.styrofoam?.tandemPosition || 0);
+  const [foamSingleLegErrors, setFoamSingleLegErrors] = useState(medicalOfficeAssessment.mbessTestResults?.styrofoam?.standsOnOneFeet || 0);
 
   // Calculate totals
-  const total = [doubleLeg, tandem, singleLeg].reduce((sum, v) => sum + (parseInt(v) || 0), 0);
-  const foamTotal = [foamDoubleLeg, foamTandem, foamSingleLeg].reduce((sum, v) => sum + (parseInt(v) || 0), 0);
+  const totalErrors = doubleLegErrors + tandemErrors + singleLegErrors;
+  const foamTotalErrors = foamDoubleLegErrors + foamTandemErrors + foamSingleLegErrors;
 
   const handleSubmit = () => {
-    // TODO: Save or process results
+    const casuallyScores: MedicalOfficeAssessment.MbessTestResults.Casually = {
+      standsOnBothFeet: doubleLegErrors,
+      tandemPosition: tandemErrors,
+      standsOnOneFeet: singleLegErrors,
+    };
+
+    let styrofoamScores: MedicalOfficeAssessment.MbessTestResults.Styrofoam | undefined = undefined;
+    // Only include styrofoam scores if at least one error count is greater than 0 or was explicitly set
+    // This handles the case where fields might be empty strings initially if not touched.
+    if (foamDoubleLegErrors > 0 || foamTandemErrors > 0 || foamSingleLegErrors > 0 || 
+        medicalOfficeAssessment.mbessTestResults?.styrofoam?.standsOnBothFeet !== undefined ||
+        medicalOfficeAssessment.mbessTestResults?.styrofoam?.tandemPosition !== undefined ||
+        medicalOfficeAssessment.mbessTestResults?.styrofoam?.standsOnOneFeet !== undefined
+    ) {
+      styrofoamScores = {
+        standsOnBothFeet: foamDoubleLegErrors,
+        tandemPosition: foamTandemErrors,
+        standsOnOneFeet: foamSingleLegErrors,
+      };
+    }
+
+    const dataToSave: MedicalOfficeAssessment.MbessTestResults = {
+      casually: casuallyScores,
+    };
+
+    if (styrofoamScores) {
+      dataToSave.styrofoam = styrofoamScores;
+    }
+
+    updateMbessTestResults(dataToSave);
     router.push('/(testing-form)/tandem-walk');
   };
 
   return (
     <ScrollViewKeyboardAwareContainer contentContainerStyle={{ alignItems: 'flex-start' }}>
       <View style={styles.container}>
-        <Text style={styles.header}>mBESS (по 20 секунд каждый)</Text>
+        <Text style={styles.header}>mBESS (по {MBESS_TIMER_DURATION} секунд каждый)</Text>
         
-        <View style={styles.inputField}>
-          <View style={styles.inputRow}>
-            <View style={styles.inputContainer}>
-              <TextInputField
-                label="Пациент стоит на двух ногах"
-                placeholder=""
-                value={doubleLeg}
-                onChangeText={(value) => validateMaxTen(value, setDoubleLeg)}
-                keyboardType="number-pad"
-              />
-            </View>
-            <Text style={styles.scoreLabel}>из 10</Text>
-          </View>
-        </View>
+        <TimedClickerField
+          label="Пациент стоит на двух ногах"
+          errorCount={doubleLegErrors}
+          onErrorChange={setDoubleLegErrors}
+          maxErrors={MAX_ERRORS}
+          timerDuration={MBESS_TIMER_DURATION}
+          soundIntervalSeconds={SOUND_INTERVAL}
+        />
 
-        <View style={styles.inputField}>
-          <View style={styles.inputRow}>
-            <View style={styles.inputContainer}>
-              <TextInputField
-                label="Тандемная позиция"
-                placeholder=""
-                value={tandem}
-                onChangeText={(value) => validateMaxTen(value, setTandem)}
-                keyboardType="number-pad"
-              />
-            </View>
-            <Text style={styles.scoreLabel}>из 10</Text>
-          </View>
-        </View>
+        <TimedClickerField
+          label="Тандемная позиция"
+          errorCount={tandemErrors}
+          onErrorChange={setTandemErrors}
+          maxErrors={MAX_ERRORS}
+          timerDuration={MBESS_TIMER_DURATION}
+          soundIntervalSeconds={SOUND_INTERVAL}
+        />
 
-        <View style={styles.inputField}>
-          <View style={styles.inputRow}>
-            <View style={styles.inputContainer}>
-              <TextInputField
-                label="Пациент стоит на одной ноге"
-                placeholder=""
-                value={singleLeg}
-                onChangeText={(value) => validateMaxTen(value, setSingleLeg)}
-                keyboardType="number-pad"
-              />
-            </View>
-            <Text style={styles.scoreLabel}>из 10</Text>
-          </View>
-        </View>
+        <TimedClickerField
+          label="Пациент стоит на одной ноге"
+          errorCount={singleLegErrors}
+          onErrorChange={setSingleLegErrors}
+          maxErrors={MAX_ERRORS}
+          timerDuration={MBESS_TIMER_DURATION}
+          soundIntervalSeconds={SOUND_INTERVAL}
+        />
 
-        <View style={styles.inputField}>
-          <View style={styles.inputRow}>
-            <View style={styles.inputContainer}>
-              <TextInputField
-                label="Общее количество отклонений"
-                placeholder=""
-                value={total.toString()}
-                onChangeText={() => {}}
-                editable={false}
-                style={styles.totalInput}
-              />
-            </View>
-            <Text style={styles.scoreLabel}>из 30</Text>
+        <View style={styles.totalDisplayContainer}>
+          <Text style={styles.totalLabelText}>Общее количество отклонений:</Text>
+          <View style={styles.totalValueRow}>
+            <Text style={styles.totalValueText}>{totalErrors.toString()}</Text>
+            <Text style={styles.scoreOutOfLabel}>из {MAX_ERRORS * 3}</Text>
           </View>
         </View>
 
         <View style={styles.optionalSection}>
           <Text style={styles.foamHeader}>На пенопласте (опционально)</Text>
           
-          <View style={styles.inputField}>
-            <View style={styles.inputRow}>
-              <View style={styles.inputContainer}>
-                <TextInputField
-                  label="Пациент стоит на двух ногах"
-                  placeholder=""
-                  value={foamDoubleLeg}
-                  onChangeText={(value) => validateMaxTen(value, setFoamDoubleLeg)}
-                  keyboardType="number-pad"
-                />
-              </View>
-              <Text style={styles.scoreLabel}>из 10</Text>
-            </View>
-          </View>
+          <TimedClickerField
+            label="Пациент стоит на двух ногах"
+            errorCount={foamDoubleLegErrors}
+            onErrorChange={setFoamDoubleLegErrors}
+            maxErrors={MAX_ERRORS}
+            timerDuration={MBESS_TIMER_DURATION}
+            soundIntervalSeconds={SOUND_INTERVAL}
+          />
 
-          <View style={styles.inputField}>
-            <View style={styles.inputRow}>
-              <View style={styles.inputContainer}>
-                <TextInputField
-                  label="Тандемная позиция"
-                  placeholder=""
-                  value={foamTandem}
-                  onChangeText={(value) => validateMaxTen(value, setFoamTandem)}
-                  keyboardType="number-pad"
-                />
-              </View>
-              <Text style={styles.scoreLabel}>из 10</Text>
-            </View>
-          </View>
+          <TimedClickerField
+            label="Тандемная позиция"
+            errorCount={foamTandemErrors}
+            onErrorChange={setFoamTandemErrors}
+            maxErrors={MAX_ERRORS}
+            timerDuration={MBESS_TIMER_DURATION}
+            soundIntervalSeconds={SOUND_INTERVAL}
+          />
 
-          <View style={styles.inputField}>
-            <View style={styles.inputRow}>
-              <View style={styles.inputContainer}>
-                <TextInputField
-                  label="Пациент стоит на одной ноге"
-                  placeholder=""
-                  value={foamSingleLeg}
-                  onChangeText={(value) => validateMaxTen(value, setFoamSingleLeg)}
-                  keyboardType="number-pad"
-                />
-              </View>
-              <Text style={styles.scoreLabel}>из 10</Text>
-            </View>
-          </View>
+          <TimedClickerField
+            label="Пациент стоит на одной ноге"
+            errorCount={foamSingleLegErrors}
+            onErrorChange={setFoamSingleLegErrors}
+            maxErrors={MAX_ERRORS}
+            timerDuration={MBESS_TIMER_DURATION}
+            soundIntervalSeconds={SOUND_INTERVAL}
+          />
 
-          <View style={styles.inputField}>
-            <View style={styles.inputRow}>
-              <View style={styles.inputContainer}>
-                <TextInputField
-                  label="Общее количество отклонений"
-                  placeholder=""
-                  value={foamTotal.toString()}
-                  onChangeText={() => {}}
-                  editable={false}
-                  style={styles.totalInput}
-                />
-              </View>
-              <Text style={styles.scoreLabel}>из 30</Text>
+          <View style={styles.totalDisplayContainer}>
+            <Text style={styles.totalLabelText}>Общее количество отклонений:</Text>
+            <View style={styles.totalValueRow}>
+              <Text style={styles.totalValueText}>{foamTotalErrors.toString()}</Text>
+              <Text style={styles.scoreOutOfLabel}>из {MAX_ERRORS * 3}</Text>
             </View>
           </View>
         </View>
@@ -189,29 +166,35 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignSelf: 'flex-start',
   },
-  inputField: {
+  totalDisplayContainer: {
     width: '100%',
     marginBottom: 20,
   },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    width: '100%',
-    minHeight: 70,
+  totalLabelText: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 6,
+    fontWeight: '500',
   },
-  inputContainer: {
-    flex: 1,
+  totalValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    minHeight: 45,
+  },
+  totalValueText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
     marginRight: 8,
   },
-  scoreLabel: {
+  scoreOutOfLabel: {
     fontSize: 16,
     color: '#666',
-    marginLeft: 8,
-    width: 50,
-    marginTop: 35,
-  },
-  totalInput: {
-    backgroundColor: '#f5f5f5',
+    flexShrink: 0,
   },
   optionalSection: {
     width: '100%',

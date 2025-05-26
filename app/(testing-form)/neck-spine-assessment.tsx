@@ -5,9 +5,11 @@ import { StyleSheet, View, Text } from "react-native";
 import { useState, useEffect } from "react";
 import { router } from "expo-router";
 import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
-import { saveNeckSpineAssessment, loadNeckSpineAssessment } from "@/services/immediateAssessmentStorageService";
+import { useFormContext } from "@/contexts/FormContext";
 
 export default function NeckSpineAssessment() {
+    const { immediateAssessment, updateNeckSpineAssessment } = useFormContext();
+    
     const [answers, setAnswers] = useState<ImmediateAssessment.NeckSpineAssessment>({
         painAtRest: false,
         tenderness: false,
@@ -16,18 +18,17 @@ export default function NeckSpineAssessment() {
     });
 
     useEffect(() => {
-        (async () => {
-            const saved = await loadNeckSpineAssessment();
-            if (saved) setAnswers(saved);
-        })();
-    }, []);
+        if (immediateAssessment.neckSpineAssessment) {
+            setAnswers(immediateAssessment.neckSpineAssessment);
+        }
+    }, [immediateAssessment.neckSpineAssessment]);
 
     const handleChange = (key: keyof typeof answers) => {
         setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleSubmit = async () => {
-        await saveNeckSpineAssessment(answers);
+    const handleSubmit = () => {
+        updateNeckSpineAssessment(answers);
         router.push("/(testing-form)/coordination-eye-movement");
     };
 

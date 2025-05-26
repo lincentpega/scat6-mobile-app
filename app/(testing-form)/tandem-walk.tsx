@@ -4,11 +4,17 @@ import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import Timer from '@/components/Timer';
 import SubmitButton from '@/components/SubmitButton';
 import { router } from 'expo-router';
+import { useFormContext } from '@/contexts/FormContext';
+import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 
 export default function TandemWalk() {
-  const [attempt1, setAttempt1] = useState(0);
-  const [attempt2, setAttempt2] = useState(0);
-  const [attempt3, setAttempt3] = useState(0);
+  const { medicalOfficeAssessment, updateTandemWalkIsolatedTask } = useFormContext();
+
+  // Initialize attempts from context or default to 0
+  const initialAttempts = medicalOfficeAssessment.tandemWalkIsolatedTask?.trials || [0, 0, 0];
+  const [attempt1, setAttempt1] = useState(initialAttempts[0] || 0);
+  const [attempt2, setAttempt2] = useState(initialAttempts[1] || 0);
+  const [attempt3, setAttempt3] = useState(initialAttempts[2] || 0);
   const [runningIndex, setRunningIndex] = useState<number | null>(null);
 
   // Only count attempts > 0 for average
@@ -42,7 +48,17 @@ export default function TandemWalk() {
   });
 
   const handleSubmit = () => {
-    // TODO: Save results and implement navigation to next screen
+    const attemptsValues = [attempt1, attempt2, attempt3].filter(v => v > 0);
+    const avgResult = attemptsValues.length > 0 ? Math.round(attemptsValues.reduce((a, b) => a + b, 0) / attemptsValues.length) : 0;
+    const bResult = attemptsValues.length > 0 ? Math.min(...attemptsValues) : 0;
+
+    const isolatedTaskData: MedicalOfficeAssessment.TandemWalkIsolatedTask = {
+      trials: [attempt1, attempt2, attempt3],
+      avgResult: avgResult,
+      bestResult: bResult,
+    };
+
+    updateTandemWalkIsolatedTask(isolatedTaskData);
     router.push('/(testing-form)/tandem-walk-dual');
   };
 

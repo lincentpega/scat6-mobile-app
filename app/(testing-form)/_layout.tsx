@@ -4,9 +4,9 @@ export default function TestingFormLayout() {
   return (
     <Stack>
       <Stack.Screen
-        name="brain-injury-history"
+        name="index"
         options={{
-          title: "История травм головного мозга",
+          title: "Тестирование",
           headerBackTitle: "Назад"
         }}
       />
@@ -14,14 +14,9 @@ export default function TestingFormLayout() {
         name="observable-signs"
         options={{
           title: "Видимые признаки",
-          headerBackTitle: "Назад"
-        }}
-      />
-      <Stack.Screen
-        name="red-flags"
-        options={{
-          title: "Красные флаги",
-          headerBackTitle: "Назад"
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null
         }}
       />
       <Stack.Screen
@@ -56,7 +51,9 @@ export default function TestingFormLayout() {
         name="symptoms-questionary"
         options={{
           title: "Опросник симптомов",
-          headerBackTitle: "Назад"
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null
         }}
       />
       <Stack.Screen

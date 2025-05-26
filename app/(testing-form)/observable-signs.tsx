@@ -5,9 +5,11 @@ import { StyleSheet, View, Text } from "react-native";
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
-import { saveObservableSigns, loadObservableSigns } from "@/services/immediateAssessmentStorageService";
+import { useFormContext } from "@/contexts/FormContext";
 
 export default function ObservableSigns() {
+    const { immediateAssessment, updateObservableSigns } = useFormContext();
+    
     const [signs, setSigns] = useState<ImmediateAssessment.ObservableSigns>({
         immobile: false,
         unprotectedFall: false,
@@ -19,20 +21,19 @@ export default function ObservableSigns() {
         highRiskMechanism: false,
     });
 
-    // Load saved observable signs on mount
+    // Load saved observable signs from context on mount
     useEffect(() => {
-        (async () => {
-            const saved = await loadObservableSigns();
-            if (saved) setSigns(saved);
-        })();
-    }, []);
+        if (immediateAssessment.observableSigns) {
+            setSigns(immediateAssessment.observableSigns);
+        }
+    }, [immediateAssessment.observableSigns]);
 
     const handleChange = (key: keyof typeof signs) => {
         setSigns((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleSubmit = async () => {
-        await saveObservableSigns(signs);
+    const handleSubmit = () => {
+        updateObservableSigns(signs);
         router.push("/(testing-form)/neck-spine-assessment");
     };
 

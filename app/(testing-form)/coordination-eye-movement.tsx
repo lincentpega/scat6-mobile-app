@@ -5,9 +5,10 @@ import { StyleSheet, View, Text } from "react-native";
 import { useState, useEffect } from "react";
 import { router } from "expo-router";
 import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
-import { saveCoordinationEyeMovement, loadCoordinationEyeMovement } from "@/services/immediateAssessmentStorageService";
+import { useFormContext } from "@/contexts/FormContext";
 
 export default function CoordinationEyeMovement() {
+    const { immediateAssessment, updateCoordinationEyeMovement } = useFormContext();
     const [answers, setAnswers] = useState<ImmediateAssessment.CoordinationEyeMovement>({
         coordination: false,
         eyeMovement: false,
@@ -15,18 +16,17 @@ export default function CoordinationEyeMovement() {
     });
 
     useEffect(() => {
-        (async () => {
-            const saved = await loadCoordinationEyeMovement();
-            if (saved) setAnswers(saved);
-        })();
-    }, []);
+        if (immediateAssessment.coordinationEyeMovement) {
+            setAnswers(immediateAssessment.coordinationEyeMovement);
+        }
+    }, [immediateAssessment.coordinationEyeMovement]);
 
     const handleChange = (key: keyof typeof answers) => {
         setAnswers((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleSubmit = async () => {
-        await saveCoordinationEyeMovement(answers);
+    const handleSubmit = () => {
+        updateCoordinationEyeMovement(answers);
         router.push("/(testing-form)/glasgow-scale");
     };
 

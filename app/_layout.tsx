@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';  // <-- импортируем хук
 import { AthleteProvider } from '@/contexts/AthleteContext';
+import { FormProvider, useFormContext } from '@/contexts/FormContext';
 import { useEffect } from 'react';
 
 // Не даём сплэш-скрину закрыться до загрузки шрифтов
@@ -34,6 +35,7 @@ function LayoutContent() {
   });
 
   const { isUserLoggedIn } = useAuth();
+  const { isFormActive } = useFormContext();
 
   // прячем сплэш, как только шрифты подгрузились
   useEffect(() => {
@@ -75,20 +77,30 @@ function LayoutContent() {
         <Tabs.Screen
           name="(athlete)"
           options={{
-            title: 'Спортсмен',
-            tabBarLabel: 'Спортсмен',
+            title: 'Спортсмены',
+            tabBarLabel: 'Спортсмены',
             headerShown: false,
             href: isUserLoggedIn ? undefined : null,
             tabBarIcon: FormTabIcon,
           }}
         />
         <Tabs.Screen
+          name="(drafts)"
+          options={{
+            title: 'Черновики',
+            tabBarLabel: 'Черновики',
+            headerShown: false,
+            // href: isUserLoggedIn ? undefined : null,
+            tabBarIcon: FormTabIcon,
+          }}
+        />
+        <Tabs.Screen
           name="(testing-form)"
           options={{
-            title: 'Форма',
-            tabBarLabel: 'Форма',
+            title: 'Формы',
+            tabBarLabel: 'Формы',
             headerShown: false,
-            href: isUserLoggedIn ? undefined : null,
+            href: isUserLoggedIn && isFormActive ? undefined : null,
             tabBarIcon: FormTabIcon,
           }}
         />
@@ -102,7 +114,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AthleteProvider>
+        <FormProvider>
         <LayoutContent />
+        </FormProvider>
       </AthleteProvider>
     </AuthProvider>
   );

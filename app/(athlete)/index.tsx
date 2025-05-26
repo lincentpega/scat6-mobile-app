@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import TextInputField from '@/components/TextInputField';
 import SubmitButton from '@/components/SubmitButton';
 import { SportsmanSearchItem } from '@/model/Sportsman';
@@ -15,6 +15,9 @@ interface SearchState {
   hasSearched: boolean;
   hasMorePages: boolean;
 }
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
 
 export default function SearchAthlete() {
   const { setAthleteId, clearAthleteId } = useAthleteContext();
@@ -37,47 +40,63 @@ export default function SearchAthlete() {
   }, []);
 
   const loadInitialAthletes = useCallback(async () => {
-    setSearchState(prev => ({ ...prev, isLoading: true }));
-    try {
-      const athletes = await fetchAthletes(1, 10);
-      setSearchState(prev => ({
-        ...prev,
-        results: athletes.items,
-        currentPage: 1,
-        isLoading: false,
-        hasMorePages: athletes.totalItems > athletes.items.length,
-      }));
-      isInitialLoadRef.current = false;
-    } catch (error) {
-      console.error('Failed to load athletes:', error);
-      Alert.alert('Ошибка', 'Не удалось загрузить список спортсменов');
-      setSearchState(prev => ({ ...prev, isLoading: false }));
-      isInitialLoadRef.current = false;
+    setSearchState(prev => ({ ...prev, isLoading: true, results: [], currentPage: 1, hasMorePages: true, hasSearched: false }));
+    isInitialLoadRef.current = true;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const athletes = await fetchAthletes(1, 10);
+        setSearchState(prev => ({
+          ...prev,
+          results: athletes.items,
+          currentPage: 1,
+          isLoading: false,
+          hasMorePages: athletes.totalItems > athletes.items.length,
+        }));
+        isInitialLoadRef.current = false;
+        return; // Success
+      } catch (error) {
+        console.error(`Failed to load initial athletes (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+        if (attempt < MAX_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        } else {
+          // All retries failed
+          setSearchState(prev => ({ ...prev, isLoading: false, results: [], hasMorePages: false }));
+          isInitialLoadRef.current = false;
+        }
+      }
     }
   }, []);
 
   const handleSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      // If query is empty, load all athletes
-      await loadInitialAthletes();
-      setSearchState(prev => ({ ...prev, hasSearched: false }));
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+      await loadInitialAthletes(); // This will use its own retry logic
       return;
     }
 
-    setSearchState(prev => ({ ...prev, isLoading: true, hasSearched: true }));
-    try {
-      const results = await fetchAthletes(1, 10, query.trim());
-      setSearchState(prev => ({
-        ...prev,
-        results: results.items,
-        currentPage: 1,
-        isLoading: false,
-        hasMorePages: results.totalItems > results.items.length,
-      }));
-    } catch (error) {
-      console.error('Search failed:', error);
-      Alert.alert('Ошибка', 'Не удалось выполнить поиск');
-      setSearchState(prev => ({ ...prev, isLoading: false }));
+    setSearchState(prev => ({ ...prev, isLoading: true, query: trimmedQuery, results: [], currentPage: 1, hasSearched: true, hasMorePages: true }));
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const results = await fetchAthletes(1, 10, trimmedQuery);
+        setSearchState(prev => ({
+          ...prev,
+          results: results.items,
+          currentPage: 1,
+          isLoading: false,
+          hasMorePages: results.totalItems > results.items.length,
+        }));
+        return; // Success
+      } catch (error) {
+        console.error(`Search failed for query "${trimmedQuery}" (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+        if (attempt < MAX_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        } else {
+          // All retries failed
+          setSearchState(prev => ({ ...prev, isLoading: false, results: [], hasMorePages: false }));
+        }
+      }
     }
   }, [loadInitialAthletes]);
 
@@ -107,22 +126,29 @@ export default function SearchAthlete() {
     const nextPage = searchState.currentPage + 1;
     setSearchState(prev => ({ ...prev, isLoading: true }));
 
-    try {
-      const newResults = searchState.hasSearched
-        ? await fetchAthletes(nextPage, 10, searchState.query.trim())
-        : await fetchAthletes(nextPage, 10);
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const newResults = searchState.hasSearched
+          ? await fetchAthletes(nextPage, 10, searchState.query.trim())
+          : await fetchAthletes(nextPage, 10);
 
-      setSearchState(prev => ({
-        ...prev,
-        results: [...prev.results, ...newResults.items],
-        currentPage: nextPage,
-        isLoading: false,
-        hasMorePages: prev.results.length + newResults.items.length < newResults.totalItems,
-      }));
-    } catch (error) {
-      console.error('Failed to load more results:', error);
-      Alert.alert('Ошибка', 'Не удалось загрузить больше результатов');
-      setSearchState(prev => ({ ...prev, isLoading: false }));
+        setSearchState(prev => ({
+          ...prev,
+          results: [...prev.results, ...newResults.items],
+          currentPage: nextPage,
+          isLoading: false,
+          hasMorePages: prev.results.length + newResults.items.length < newResults.totalItems,
+        }));
+        return; // Success
+      } catch (error) {
+        console.error(`Failed to load more results (page ${nextPage}, attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+        if (attempt < MAX_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        } else {
+          // All retries failed
+          setSearchState(prev => ({ ...prev, isLoading: false, hasMorePages: false })); // Stop trying to load more if all retries fail
+        }
+      }
     }
   };
 

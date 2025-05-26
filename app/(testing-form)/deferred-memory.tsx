@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
+import { useFormContext } from '@/contexts/FormContext';
+import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
+import { saveMedicalOfficeAssessment } from '@/services/medicalOfficeAssessmentStorageService';
+import { useAthleteContext } from '@/contexts/AthleteContext';
 
 const WORD_LISTS = {
   A: ['Куртка', 'Стрела', 'Перец', 'Хлопок', 'Кино', 'Доллар', 'Мёд', 'Зеркало', 'Седло', 'Якорь'],
@@ -13,9 +17,31 @@ const LIST_LABELS = ['A', 'B', 'C'] as const;
 type ListKey = keyof typeof WORD_LISTS;
 
 export default function DeferredMemory() {
+  const { medicalOfficeAssessment, updateDeferredMemory, clearMedicalOfficeAssessment, setIsFormActive } = useFormContext();
   const [selectedList, setSelectedList] = useState<ListKey>('A');
   const [answers, setAnswers] = useState<boolean[]>(Array(10).fill(false));
-  const [startTime, setStartTime] = useState('');
+  const [currentStartTime, setCurrentStartTime] = useState('');
+  const { athleteId } = useAthleteContext();
+
+
+  useEffect(() => {
+    const newStartTime = new Date().toISOString();
+    setCurrentStartTime(newStartTime);
+
+    if (medicalOfficeAssessment.deferredMemory) {
+      const { list, result: contextResult } = medicalOfficeAssessment.deferredMemory;
+      if (LIST_LABELS.includes(list)) {
+        setSelectedList(list);
+      }
+      const newAnswers = Array(10).fill(false);
+      if (typeof contextResult === 'number' && contextResult >= 0 && contextResult <= 10) {
+        for (let i = 0; i < contextResult; i++) {
+          newAnswers[i] = true;
+        }
+      }
+      setAnswers(newAnswers);
+    }
+  }, []);
 
   const handleCheckbox = (idx: number) => {
     setAnswers(prev => prev.map((v, i) => (i === idx ? !v : v)));
@@ -28,6 +54,19 @@ export default function DeferredMemory() {
 
   const result = answers.filter(Boolean).length;
 
+  const handleSubmit = () => {
+    const dataToSave: MedicalOfficeAssessment.DeferredMemory = {
+      startTime: currentStartTime,
+      list: selectedList,
+      result: result,
+    };
+    updateDeferredMemory(dataToSave);
+    medicalOfficeAssessment.sportsmanId = athleteId ?? undefined;
+    saveMedicalOfficeAssessment(medicalOfficeAssessment);
+    clearMedicalOfficeAssessment();
+    setIsFormActive(false);
+  };
+
   return (
     <ScrollViewKeyboardAwareContainer contentContainerStyle={{ alignItems: 'flex-start', backgroundColor: '#fff', minHeight: '100%' }}>
       <View style={styles.container}>
@@ -36,16 +75,6 @@ export default function DeferredMemory() {
           <Text style={{ fontWeight: 'bold' }}>Набирайте 1 балл за каждый правильный ответ.</Text>{"\n"}
           <Text style={{ fontWeight: 'bold' }}>Скажите:</Text> "Помните тот список слов, который я читал ранее? Назовите столько слов из списка, сколько сможете вспомнить, в любом порядке."
         </Text>
-        <View style={styles.row}>
-          <Text style={styles.inputLabel}>Время начала теста</Text>
-          <TextInput
-            style={styles.input}
-            value={startTime}
-            onChangeText={setStartTime}
-            placeholder="__ : __"
-            keyboardType="default"
-          />
-        </View>
         <View style={styles.row}>
           <Text style={styles.inputLabel}>Выберите список слов</Text>
           {LIST_LABELS.map((list) => (
@@ -96,7 +125,7 @@ export default function DeferredMemory() {
             <Text style={[styles.tableFooterCell, { flex: 2 }]}></Text>
           </View>
         </View>
-        <SubmitButton text="Завершить тест" onPress={() => {}} style={{ marginTop: 24, width: '100%' }} />
+        <SubmitButton text="Завершить тест" onPress={handleSubmit} style={{ marginTop: 24, width: '100%' }} />
       </View>
     </ScrollViewKeyboardAwareContainer>
   );

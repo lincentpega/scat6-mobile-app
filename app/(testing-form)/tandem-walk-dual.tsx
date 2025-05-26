@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import LabeledPicker from '@/components/LabeledPicker';
 import SubmitButton from '@/components/SubmitButton';
 import { Picker } from '@react-native-picker/picker';
-import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import Timer from '@/components/Timer';
+import TimedClickerField from '@/components/TimedClickerField';
 import { router } from 'expo-router';
+import { useFormContext } from '@/contexts/FormContext';
+import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 
 const PRACTICE_NUMBERS = [93, 86, 79, 72, 65, 58, 51, 44];
 const MAIN_START_OPTIONS = [88, 90, 98];
@@ -21,59 +23,95 @@ function generateTrialNumbers(start: number) {
 
 export default function TandemWalkDual() {
   // Practice section state
-  const [practiceChecked, setPracticeChecked] = useState<boolean[]>(Array(PRACTICE_NUMBERS.length).fill(false));
+  const [practiceErrorsCount, setPracticeErrorsCount] = useState(0);
   const [practiceTime, setPracticeTime] = useState(0);
   const [practiceTimerRunning, setPracticeTimerRunning] = useState(false);
 
   // Main section state
   const [mainStart, setMainStart] = useState<number>(MAIN_START_OPTIONS[0]);
-  const [visibleTrial, setVisibleTrial] = useState<number>(0); // 0, 1, 2
-  // trialsChecked[trialIdx][numIdx]
-  const [trialsChecked, setTrialsChecked] = useState<boolean[][]>(
-    Array(3).fill(0).map(() => Array(NUMBERS_PER_TRIAL).fill(false))
-  );
+  const [visibleTrial, setVisibleTrial] = useState<number>(0);
+  const [trialsErrorsCount, setTrialsErrorsCount] = useState<number[]>(Array(3).fill(0));
   const [trialsTime, setTrialsTime] = useState<number[]>(Array(3).fill(0));
   const [trialsTimerRunning, setTrialsTimerRunning] = useState<boolean[]>(Array(3).fill(false));
 
+  const { medicalOfficeAssessment, updateTandemWalkDualTask } = useFormContext();
+
+  useEffect(() => {
+    if (medicalOfficeAssessment.tandemWalkDualTask) {
+      const {
+        practice,
+        cognitive,
+      } = medicalOfficeAssessment.tandemWalkDualTask;
+
+      if (practice) {
+        setPracticeErrorsCount(practice.errors || 0);
+        setPracticeTime(practice.time || 0);
+      }
+      if (cognitive) {
+        if (cognitive.startNumber && MAIN_START_OPTIONS.includes(cognitive.startNumber)) {
+          setMainStart(cognitive.startNumber);
+        }
+        if (cognitive.trials && cognitive.trials.length === 3) {
+          setTrialsErrorsCount([
+            cognitive.trials[0]?.errors || 0,
+            cognitive.trials[1]?.errors || 0,
+            cognitive.trials[2]?.errors || 0,
+          ]);
+          setTrialsTime([
+            cognitive.trials[0]?.time || 0,
+            cognitive.trials[1]?.time || 0,
+            cognitive.trials[2]?.time || 0,
+          ]);
+        }
+      }
+    }
+  }, [medicalOfficeAssessment.tandemWalkDualTask]);
+
   const handleSubmit = () => {
+    const dataToSave: MedicalOfficeAssessment.TandemWalkDualTask = {
+      practice: {
+        errors: practiceErrorsCount,
+        time: practiceTime,
+      },
+      cognitive: {
+        startNumber: mainStart,
+        trials: TRIALS.map((_, index) => ({
+          id: index,
+          errors: trialsErrorsCount[index],
+          time: trialsTime[index],
+          // Assuming checkedAnswers are not tracked in this simplified version for dual task
+          // If they were, you'd need a state for them similar to short-term-memory
+          checkedAnswers: generateTrialNumbers(mainStart).map(() => false) 
+        })),
+      }
+    };
+    updateTandemWalkDualTask(dataToSave);
     router.push('/(testing-form)/tandem-walk-result');
   };
 
-  // Handlers for practice
-  const handlePracticeCheck = (idx: number) => {
-    setPracticeChecked(prev => prev.map((v, i) => (i === idx ? !v : v)));
-  };
-  const handlePracticeTimerChange = (val: number) => setPracticeTime(val);
-  const handlePracticeTimerStart = () => setPracticeTimerRunning(true);
-  const handlePracticeTimerStop = () => setPracticeTimerRunning(false);
-  const handlePracticeTimerReset = () => { setPracticeTime(0); setPracticeTimerRunning(false); };
+  const handlePracticeTimerChange = useCallback((val: number) => setPracticeTime(val), []);
+  const handlePracticeTimerStart = useCallback(() => setPracticeTimerRunning(true), []);
+  const handlePracticeTimerStop = useCallback(() => setPracticeTimerRunning(false), []);
+  const handlePracticeTimerReset = useCallback(() => { setPracticeTime(0); setPracticeTimerRunning(false); }, []);
 
-  // Handlers for main trials
-  const handleTrialCheck = (trialIdx: number, numIdx: number) => {
-    setTrialsChecked(prev => prev.map((row, t) =>
-      t === trialIdx ? row.map((v, n) => (n === numIdx ? !v : v)) : row
-    ));
-  };
-  const handleTrialTimerChange = (trialIdx: number, val: number) => {
+  const handleTrialTimerChange = useCallback((trialIdx: number, val: number) => {
     setTrialsTime(prev => prev.map((v, i) => (i === trialIdx ? val : v)));
-  };
-  const handleTrialTimerStart = (trialIdx: number) => {
-    setTrialsTimerRunning(prev => prev.map((v, i) => i === trialIdx));
-  };
-  const handleTrialTimerStop = (trialIdx: number) => {
+  }, []);
+  
+  const handleTrialTimerStart = useCallback((trialIdx: number) => {
+    setTrialsTimerRunning(prev => prev.map((v, i) => (i === trialIdx ? true : v)));
+  }, []);
+  
+  const handleTrialTimerStop = useCallback((trialIdx: number) => {
     setTrialsTimerRunning(prev => prev.map((v, i) => (i === trialIdx ? false : v)));
-  };
-  const handleTrialTimerReset = (trialIdx: number) => {
+  }, []);
+  
+  const handleTrialTimerReset = useCallback((trialIdx: number) => {
     setTrialsTime(prev => prev.map((v, i) => (i === trialIdx ? 0 : v)));
     setTrialsTimerRunning(prev => prev.map((v, i) => (i === trialIdx ? false : v)));
-  };
+  }, []);
 
-  // Dynamic numbers for main trials
   const mainNumbers = generateTrialNumbers(mainStart);
-
-  // Error counts
-  const practiceErrors = practiceChecked.filter(v => !v).length;
-  const trialErrors = trialsChecked.map(row => row.filter(v => !v).length);
 
   return (
     <ScrollViewKeyboardAwareContainer contentContainerStyle={{ alignItems: 'flex-start', backgroundColor: '#fff5eb', minHeight: '100%' }}>
@@ -86,32 +124,15 @@ export default function TandemWalkDual() {
           <Text style={{ fontWeight: 'bold' }}>Скажите:</Text> "Теперь, пока вы ходите с пятки на носок, я попрошу вас считать вслух, вычитая из числа 7. Например, если бы мы начали со 100, вы бы сказали 100, 93, 86, 79. Давайте потренируемся считать. Начиная с 93, считайте в обратном порядке на семерки, пока я не скажу"
         </Text>
         <Text style={styles.sectionTitle}>Практика двойного задания</Text>
-        <View style={styles.practiceRow}>
+        <View style={styles.numberListContainer}>
           {PRACTICE_NUMBERS.map((num, idx) => (
-            <View key={num} style={styles.checkboxCol}>
-              <BouncyCheckbox
-                isChecked={practiceChecked[idx]}
-                onPress={() => handlePracticeCheck(idx)}
-                fillColor="#000"
-                unFillColor="#fff"
-                size={28}
-                iconStyle={{ borderColor: '#000', borderRadius: 6 }}
-                innerIconStyle={{ borderWidth: 2, borderRadius: 6 }}
-                style={{ marginBottom: 2, alignSelf: 'center', width: 28 }}
-              />
-              <Text style={styles.checkboxLabel}>{num}</Text>
-            </View>
+            <Text key={idx} style={styles.numberListItem}>{num}{idx < PRACTICE_NUMBERS.length - 1 ? ', ' : ''}</Text>
           ))}
         </View>
-        <View style={styles.centeredRow}>
-          <View style={styles.counterBlock}>
-            <Text style={styles.inputLabel}>Ошибки</Text>
-            <View style={styles.counter}><Text style={styles.counterText}>{practiceErrors}</Text></View>
-          </View>
-        </View>
+        
         <View style={styles.centeredTimerRow}>
           <View style={styles.counterBlock}>
-            <Text style={styles.inputLabel}>Время</Text>
+            <Text style={styles.inputLabel}>Время (Практика)</Text>
             <Timer
               onChange={handlePracticeTimerChange}
               initial={practiceTime}
@@ -123,6 +144,14 @@ export default function TandemWalkDual() {
             />
           </View>
         </View>
+
+        <TimedClickerField 
+            label="Ошибки (Практика)"
+            errorCount={practiceErrorsCount}
+            onErrorChange={setPracticeErrorsCount}
+            maxErrors={PRACTICE_NUMBERS.length}
+            hideTimer={true}
+        />
 
         <Text style={styles.instructions}>
           <Text style={{ fontWeight: 'bold' }}>Скажите:</Text> "Хорошо. Теперь я попрошу вас походить с пятки на носок и одновременно считать вслух в обратном направлении. Вы готовы? Число, с которого нужно начать, - "
@@ -148,34 +177,18 @@ export default function TandemWalkDual() {
             <Picker.Item key={trial} label={trial} value={idx.toString()} />
           ))}
         </LabeledPicker>
+        
         <View style={styles.trialBlock}>
           <Text style={styles.trialLabel}>{TRIALS[visibleTrial]}</Text>
-          <View style={styles.trialRow}>
+          <View style={styles.numberListContainer}>
             {mainNumbers.map((num, numIdx) => (
-              <View key={numIdx} style={styles.checkboxCol}>
-                <BouncyCheckbox
-                  isChecked={trialsChecked[visibleTrial][numIdx]}
-                  onPress={() => handleTrialCheck(visibleTrial, numIdx)}
-                  fillColor="#000"
-                  unFillColor="#fff"
-                  size={28}
-                  iconStyle={{ borderColor: '#000', borderRadius: 6 }}
-                  innerIconStyle={{ borderWidth: 2, borderRadius: 6 }}
-                  style={{ marginBottom: 2, alignSelf: 'center', width: 28 }}
-                />
-                <Text style={styles.checkboxLabel}>{num}</Text>
-              </View>
+              <Text key={numIdx} style={styles.numberListItem}>{num}{numIdx < mainNumbers.length - 1 ? ', ' : ''}</Text>
             ))}
           </View>
-          <View style={styles.centeredRow}>
-            <View style={styles.counterBlock}>
-              <Text style={styles.inputLabel}>Ошибки</Text>
-              <View style={styles.counter}><Text style={styles.counterText}>{trialErrors[visibleTrial]}</Text></View>
-            </View>
-          </View>
+
           <View style={styles.centeredTimerRow}>
             <View style={styles.counterBlock}>
-              <Text style={styles.inputLabel}>Время</Text>
+              <Text style={styles.inputLabel}>Время ({TRIALS[visibleTrial]})</Text>
               <Timer
                 onChange={val => handleTrialTimerChange(visibleTrial, val)}
                 initial={trialsTime[visibleTrial]}
@@ -187,6 +200,18 @@ export default function TandemWalkDual() {
               />
             </View>
           </View>
+
+          <TimedClickerField 
+            label={`Ошибки (${TRIALS[visibleTrial]})`}
+            errorCount={trialsErrorsCount[visibleTrial]}
+            onErrorChange={(newCount) => {
+                const newCounts = [...trialsErrorsCount];
+                newCounts[visibleTrial] = newCount;
+                setTrialsErrorsCount(newCounts);
+            }}
+            maxErrors={NUMBERS_PER_TRIAL}
+            hideTimer={true}
+          />
         </View>
         <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 24, width: '100%' }} />
       </View>
@@ -222,29 +247,21 @@ const styles = StyleSheet.create({
     color: '#a05a00',
     alignSelf: 'flex-start',
   },
-  practiceRow: {
+  numberListContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     width: '100%',
-    marginBottom: 8,
-    gap: 4,
+    marginBottom: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 6,
   },
-  checkboxCol: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 44,
-    marginHorizontal: 8,
-    marginBottom: 4,
-    paddingHorizontal: 0,
-  },
-  checkboxLabel: {
-    fontSize: 15,
-    color: '#222',
-    marginTop: 2,
-    textAlign: 'center',
-    width: 44,
-    position: 'relative',
-    left: 0,
+  numberListItem: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#2c3e50',
+    marginRight: 4,
   },
   centeredRow: {
     width: '100%',
@@ -256,25 +273,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  counter: {
-    minWidth: 36,
-    minHeight: 36,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#a05a00',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-    marginBottom: 2,
-    paddingHorizontal: 8,
-  },
-  counterText: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    color: '#a05a00',
-    textAlign: 'center',
-  },
   centeredTimerRow: {
     width: '100%',
     alignItems: 'center',
@@ -284,34 +282,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#333',
     marginBottom: 2,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#aaa',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: 15,
-    backgroundColor: '#fff',
-  },
-  timerRow: {
-    width: '100%',
-    alignItems: 'flex-start',
-    marginBottom: 10,
+    fontWeight: '500',
   },
   trialBlock: {
     width: '100%',
     marginBottom: 12,
+    padding: 10,
+    backgroundColor: '#e6f3ff',
+    borderRadius: 8,
   },
   trialLabel: {
     fontWeight: 'bold',
     fontSize: 15,
-    marginBottom: 4,
-    color: '#2f2d51',
-  },
-  trialRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 6,
+    marginBottom: 8,
+    color: '#1a508b',
+    textAlign: 'center',
   },
 });

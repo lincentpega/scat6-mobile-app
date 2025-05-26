@@ -3,10 +3,13 @@ import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import KeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import { useAuth } from '@/context/AuthContext';
+import { router } from 'expo-router';
+import { useFormContext } from '@/contexts/FormContext';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const { isUserLoggedIn, userFullName, signIn, logout } = useAuth();
+  const { setIsFormActive, isFormActive, resetForm } = useFormContext();
 
   const handleSignInPress = async () => {
     setLoading(true);
@@ -14,12 +17,25 @@ export default function HomeScreen() {
     setLoading(false);
   };
 
-
   const handleLogoutPress = async () => {
     setLoading(true);
     await logout();
     setLoading(false);
     // при логауте контекст сбросит isUserLoggedIn, UI автоматически отрисуется
+  };
+
+  const handleBasicTesting = () => {
+    setIsFormActive(true);
+    router.replace('/(testing-form)/symptoms-questionary');
+  };
+
+  const handlePostInjuryTesting = () => {
+    setIsFormActive(true);
+    router.replace('/(testing-form)/observable-signs');
+  };
+
+  const handleResetForm = () => {
+    resetForm();
   };
 
   if (loading) {
@@ -35,16 +51,34 @@ export default function HomeScreen() {
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>SCAT6</Text>
         {isUserLoggedIn && userFullName && (
-          <Text style={styles.nameText}>Добро пожаловать, {userFullName}</Text>
+          <View style={{ alignItems: 'center', marginTop: 10 }}>
+            <Text style={styles.nameText}>Добро пожаловать, {userFullName}</Text>
+            <SubmitButton 
+              onPress={handleLogoutPress} 
+              text="Выйти" 
+              style={{
+                marginTop: 10,
+                paddingHorizontal: 30,
+                paddingVertical: 15
+              }}
+            />
+          </View>
         )}
       </View>
 
       <View style={styles.inputContainer}>
-        {isUserLoggedIn ? (
-          <SubmitButton onPress={handleLogoutPress} text="Выйти" />
-        ) : (
+        {!isUserLoggedIn && (
           <SubmitButton onPress={handleSignInPress} text="Войти" />
         )}
+        <SubmitButton style={{ marginTop: 20 }} onPress={handleBasicTesting} text="Базовое тестирование" />
+        <SubmitButton style={{ marginTop: 10 }} onPress={handlePostInjuryTesting} text="Тестирование после травмы" />
+        {isFormActive && (
+              <SubmitButton 
+                style={{ marginTop: 10, backgroundColor: '#ff4444' }} 
+                onPress={handleResetForm} 
+                text="Сбросить форму" 
+              />
+            )}
       </View>
     </KeyboardAwareContainer>
   );

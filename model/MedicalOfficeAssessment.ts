@@ -1,15 +1,20 @@
 export interface MedicalOfficeAssessment {
-  symptoms: MedicalOfficeAssessment.Symptoms;
-  orientationAssessment: MedicalOfficeAssessment.OrientationAssessment;
-  cognitiveFunctions: MedicalOfficeAssessment.CognitiveFunctions;
-  shortTermMemory: MedicalOfficeAssessment.ShortTermMemory[];
-  concentrationNumbers: MedicalOfficeAssessment.ConcentrationNumbers[];
-  concentrationMonths: MedicalOfficeAssessment.ConcentrationMonths;
-  mbess: MedicalOfficeAssessment.Mbess;
-  tandemWalk: MedicalOfficeAssessment.TandemWalk;
-  deferredMemory: MedicalOfficeAssessment.DeferredMemory;
-  wasKnownBefore: boolean;
-  differsFromKnownBefore: boolean;
+  id?: string;
+  sportsmanId: string;
+  symptoms?: MedicalOfficeAssessment.Symptoms;
+  orientationAssessment?: MedicalOfficeAssessment.OrientationAssessment;
+  cognitiveFunctions?: MedicalOfficeAssessment.CognitiveFunctions;
+  shortTermMemory?: MedicalOfficeAssessment.ShortTermMemory;
+  concentrationNumbers?: MedicalOfficeAssessment.ConcentrationNumbers;
+  concentrationMonths?: MedicalOfficeAssessment.ConcentrationMonths;
+  mbessInfo?: MedicalOfficeAssessment.MbessInfo;
+  mbessTestResults?: MedicalOfficeAssessment.MbessTestResults;
+  tandemWalkIsolatedTask?: MedicalOfficeAssessment.TandemWalkIsolatedTask;
+  tandemWalkDualTask?: MedicalOfficeAssessment.TandemWalkDualTask;
+  tandemWalkResult?: MedicalOfficeAssessment.TandemWalkResult;
+  deferredMemory?: MedicalOfficeAssessment.DeferredMemory;
+  wasKnownBefore?: boolean;
+  differsFromKnownBefore?: boolean;
 }
 
 export namespace MedicalOfficeAssessment {
@@ -60,29 +65,37 @@ export namespace MedicalOfficeAssessment {
   }
 
   export interface ShortTermMemory {
-    trial: number;
-    score: number;
-    testFinishTime: string; // ISO datetime string
+    list: 'A' | 'B' | 'C';
+    trials: Array<{
+      trial: number; // 0, 1, or 2
+      score: number;
+    }>;
+    testFinishTime: string; // ISO datetime string for when all trials were completed/submitted
   }
 
   export interface ConcentrationNumbers {
-    numberList: number;
+    numberList: string;
     score: number;
   }
 
   export interface ConcentrationMonths {
     errors: number;
     time: number; // seconds
+    score: number;
   }
 
-  export interface Mbess {
-    legTested: number;
+  export interface MbessInfo {
+    legTested: 'right' | 'left' | '';
     surface: string;
     footwear: string;
-    casually: Mbess.Casually;
-    styrofoam: Mbess.Styrofoam;
   }
-  export namespace Mbess {
+
+  export interface MbessTestResults {
+    casually: MbessTestResults.Casually;
+    styrofoam?: MbessTestResults.Styrofoam;
+  }
+
+  export namespace MbessTestResults {
     export interface Casually {
       standsOnBothFeet: number;
       tandemPosition: number;
@@ -95,43 +108,35 @@ export namespace MedicalOfficeAssessment {
     }
   }
 
-  export interface TandemWalk {
-    isolatedTask: TandemWalk.IsolatedTask;
-    dual: TandemWalk.Dual;
-    failedTrials: boolean;
-    failReason?: string;
+  export interface TandemWalkIsolatedTask {
+    trials: number[];
+    avgResult: number;
+    bestResult: number;
   }
-  export namespace TandemWalk {
-    export interface IsolatedTask {
-      trials: number[];
-      avgResult: number;
-      bestResult: number;
-    }
-    export interface Dual {
-      practice: Dual.Practice;
-      cognitive: Dual.Cognitive;
-    }
-    export namespace Dual {
-      export interface Practice {
+
+  export interface TandemWalkDualTask {
+    practice: {
+      errors: number;
+      time: number;
+    };
+    cognitive: {
+      startNumber: number;
+      trials: Array<{
+        id: number;
         errors: number;
         time: number;
-      }
-      export interface Cognitive {
-        trials: Cognitive.Trial[];
-      }
-      export namespace Cognitive {
-        export interface Trial {
-          id: number;
-          errors: number;
-          time: number;
-        }
-      }
-    }
+      }>;
+    };
+  }
+
+  export interface TandemWalkResult {
+    failedAnyTrial: boolean | null;
+    failReason?: string;
   }
 
   export interface DeferredMemory {
-    startTime: string; // ISO datetime string
-    list: string;
+    startTime: string;
+    list: 'A' | 'B' | 'C';
     result: number;
   }
 } 

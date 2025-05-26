@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import InputLabel from '@/components/InputLabel';
 import TextInputField from '@/components/TextInputField';
@@ -6,13 +6,34 @@ import SubmitButton from '@/components/SubmitButton';
 import { View, Text, StyleSheet } from 'react-native';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import { router } from 'expo-router';
+import { useFormContext } from '@/contexts/FormContext';
+import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 
 export default function TandemWalkResult() {
-  const [result, setResult] = useState<null | boolean>(null);
-  const [reason, setReason] = useState('');
+  const { medicalOfficeAssessment, updateTandemWalkResult } = useFormContext();
+
+  const [result, setResult] = useState<boolean | null>(
+    medicalOfficeAssessment.tandemWalkResult?.failedAnyTrial ?? null
+  );
+  const [reason, setReason] = useState(
+    medicalOfficeAssessment.tandemWalkResult?.failReason ?? ''
+  );
+
+  useEffect(() => {
+    if (medicalOfficeAssessment.tandemWalkResult) {
+      setResult(medicalOfficeAssessment.tandemWalkResult.failedAnyTrial ?? null);
+      setReason(medicalOfficeAssessment.tandemWalkResult.failReason ?? '');
+    }
+  }, [medicalOfficeAssessment.tandemWalkResult]);
 
   const handleSubmit = () => {
-    // TODO: Save result if needed
+    const dataToSave: MedicalOfficeAssessment.TandemWalkResult = {
+      failedAnyTrial: result,
+    };
+    if (result === true && reason.trim() !== '') {
+      dataToSave.failReason = reason.trim();
+    }
+    updateTandemWalkResult(dataToSave);
     router.push('/(testing-form)/deferred-memory');
   };
 

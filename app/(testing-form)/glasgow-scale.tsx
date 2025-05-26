@@ -4,7 +4,7 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
-import { saveGlasgowScale, loadGlasgowScale } from "@/services/immediateAssessmentStorageService";
+import { useFormContext } from "@/contexts/FormContext";
 
 const EYE_RESPONSES = [
   { label: 'Глаза не открываются', value: 'none' },
@@ -47,6 +47,7 @@ function RoundButtonGroup({ options, value, onChange }: { options: { label: stri
 }
 
 export default function GlasgowScale() {
+  const { immediateAssessment, updateGlasgowScale } = useFormContext();
   const [answers, setAnswers] = useState<ImmediateAssessment.GlasgowScale>({
     eye: EYE_RESPONSES[0].value,
     verbal: VERBAL_RESPONSES[0].value,
@@ -54,14 +55,13 @@ export default function GlasgowScale() {
   });
 
   useEffect(() => {
-    (async () => {
-      const saved = await loadGlasgowScale();
-      if (saved) setAnswers(saved);
-    })();
-  }, []);
+    if (immediateAssessment.glasgowScale) {
+      setAnswers(immediateAssessment.glasgowScale);
+    }
+  }, [immediateAssessment.glasgowScale]);
 
-  const handleSubmit = async () => {
-    await saveGlasgowScale(answers);
+  const handleSubmit = () => {
+    updateGlasgowScale(answers);
     router.push('/(testing-form)/maddocks-questions');
   };
 

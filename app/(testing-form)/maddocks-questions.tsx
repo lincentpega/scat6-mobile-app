@@ -3,9 +3,10 @@ import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import { StyleSheet, View, Text } from 'react-native';
 import { useState, useEffect } from 'react';
-import { router } from 'expo-router';
 import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
-import { saveMaddocksQuestions, loadMaddocksQuestions } from "@/services/immediateAssessmentStorageService";
+import { useFormContext } from "@/contexts/FormContext";
+import { saveImmediateAssessment } from '@/services/immediateAssessmentStorageService';
+import { useAthleteContext } from '@/contexts/AthleteContext';
 
 const QUESTIONS = [
   { key: 'event', label: 'На каком мероприятии мы сегодня находимся?' },
@@ -16,6 +17,8 @@ const QUESTIONS = [
 ];
 
 export default function MaddocksQuestions() {
+  const { immediateAssessment, updateMaddocksQuestions, clearImmediateAssessment, setIsFormActive } = useFormContext();
+  const { athleteId } = useAthleteContext();
   const [answers, setAnswers] = useState<ImmediateAssessment.MaddocksQuestions>({
     event: false,
     period: false,
@@ -25,11 +28,10 @@ export default function MaddocksQuestions() {
   });
 
   useEffect(() => {
-    (async () => {
-      const saved = await loadMaddocksQuestions();
-      if (saved) setAnswers(saved);
-    })();
-  }, []);
+    if (immediateAssessment.maddocksQuestions) {
+      setAnswers(immediateAssessment.maddocksQuestions);
+    }
+  }, [immediateAssessment.maddocksQuestions]);
 
   const handleChange = (key: keyof ImmediateAssessment.MaddocksQuestions) => {
     setAnswers(prev => ({ ...prev, [key]: !prev[key] }));
@@ -37,9 +39,12 @@ export default function MaddocksQuestions() {
 
   const score = QUESTIONS.reduce((sum, q) => sum + (answers[q.key as keyof ImmediateAssessment.MaddocksQuestions] ? 1 : 0), 0);
 
-  const handleSubmit = async () => {
-    await saveMaddocksQuestions(answers);
-    router.push('/(testing-form)/symptoms-questionary');
+  const handleSubmit = () => {
+    updateMaddocksQuestions(answers);
+    immediateAssessment.sportsmanId = athleteId ?? undefined;
+    saveImmediateAssessment(immediateAssessment);
+    clearImmediateAssessment();
+    setIsFormActive(false);
   };
 
   return (
@@ -61,7 +66,7 @@ export default function MaddocksQuestions() {
           ))}
         </View>
         <Text style={styles.scoreText}>Сумма баллов по вопросам Мэддокса: <Text style={{ fontWeight: 'bold' }}>{score}</Text> / 5</Text>
-        <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 20 }} />
+        <SubmitButton text="Завершить тест" onPress={handleSubmit} style={{ marginTop: 20 }} />
       </View>
     </ScrollViewKeyboardAwareContainer>
   );

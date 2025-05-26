@@ -1,83 +1,184 @@
-import { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
+import { MedicalOfficeAssessment } from "@/model/MedicalOfficeAssessment";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export async function saveSymptoms(symptoms: MedicalOfficeAssessment.Symptoms) {
-  await AsyncStorage.setItem('symptoms', JSON.stringify(symptoms));
-}
+const MEDICAL_OFFICE_ASSESSMENTS_KEY = 'medical_office_assessments';
 
-export async function loadSymptoms(): Promise<MedicalOfficeAssessment.Symptoms | null> {
-  const data = await AsyncStorage.getItem('symptoms');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.Symptoms : null;
-}
+export const saveMedicalOfficeAssessment = async (assessment: Partial<MedicalOfficeAssessment>) => {
+    console.log('Attempting to save medical office assessment:', assessment);
+    try {
+        const existingAssessmentsRaw = await AsyncStorage.getItem(MEDICAL_OFFICE_ASSESSMENTS_KEY);
+        let assessmentsArray: Partial<MedicalOfficeAssessment>[] = [];
 
-export async function saveOrientationAssessment(orientationAssessment: MedicalOfficeAssessment.OrientationAssessment) {
-  await AsyncStorage.setItem('orientationAssessment', JSON.stringify(orientationAssessment));
-}
+        if (existingAssessmentsRaw) {
+            try {
+                assessmentsArray = JSON.parse(existingAssessmentsRaw);
+                if (!Array.isArray(assessmentsArray)) {
+                    console.warn('Existing data is not an array, initializing a new array.');
+                    assessmentsArray = [];
+                }
+            } catch (e) {
+                console.error('Failed to parse existing assessments, initializing a new array:', e);
+                assessmentsArray = [];
+            }
+        }
 
-export async function loadOrientationAssessment(): Promise<MedicalOfficeAssessment.OrientationAssessment | null> {
-  const data = await AsyncStorage.getItem('orientationAssessment');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.OrientationAssessment : null;
-}
+        // Generate a unique ID if assessment doesn't have one
+        if (!assessment.id) {
+            assessment.id = Date.now().toString();
+            console.log('Generated new ID for assessment:', assessment.id);
+        }
 
-export async function saveCognitiveFunctions(cognitiveFunctions: MedicalOfficeAssessment.CognitiveFunctions) {
-  await AsyncStorage.setItem('cognitiveFunctions', JSON.stringify(cognitiveFunctions));
-}
+        assessmentsArray.push(assessment);
 
-export async function loadCognitiveFunctions(): Promise<MedicalOfficeAssessment.CognitiveFunctions | null> {
-  const data = await AsyncStorage.getItem('cognitiveFunctions');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.CognitiveFunctions : null;
-}
+        await AsyncStorage.setItem(MEDICAL_OFFICE_ASSESSMENTS_KEY, JSON.stringify(assessmentsArray));
+        console.log('Medical office assessment saved successfully. Total assessments:', assessmentsArray.length);
+        
+        // For debugging: Log the saved array
+        const updatedAssessmentsRaw = await AsyncStorage.getItem(MEDICAL_OFFICE_ASSESSMENTS_KEY);
+        if (updatedAssessmentsRaw) {
+             console.log('Current assessments in storage:', JSON.parse(updatedAssessmentsRaw));
+        }
 
-export async function saveShortTermMemory(shortTermMemory: MedicalOfficeAssessment.ShortTermMemory[]) {
-  await AsyncStorage.setItem('shortTermMemory', JSON.stringify(shortTermMemory));
-}
+    } catch (error) {
+        console.error('Failed to save medical office assessment to AsyncStorage:', error);
+    }
+};
 
-export async function loadShortTermMemory(): Promise<MedicalOfficeAssessment.ShortTermMemory[] | null> {
-  const data = await AsyncStorage.getItem('shortTermMemory');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.ShortTermMemory[] : null;
-}
+export const updateMedicalOfficeAssessment = async (assessment: Partial<MedicalOfficeAssessment>) => {
+    console.log('Attempting to update medical office assessment:', assessment);
+    try {
+        const existingAssessmentsRaw = await AsyncStorage.getItem(MEDICAL_OFFICE_ASSESSMENTS_KEY);
+        let assessmentsArray: Partial<MedicalOfficeAssessment>[] = [];
 
-export async function saveConcentrationNumbers(concentrationNumbers: MedicalOfficeAssessment.ConcentrationNumbers[]) {
-  await AsyncStorage.setItem('concentrationNumbers', JSON.stringify(concentrationNumbers));
-}
+        if (existingAssessmentsRaw) {
+            try {
+                assessmentsArray = JSON.parse(existingAssessmentsRaw);
+                if (!Array.isArray(assessmentsArray)) {
+                    console.warn('Existing data is not an array, initializing a new array.');
+                    assessmentsArray = [];
+                }
+            } catch (e) {
+                console.error('Failed to parse existing assessments, initializing a new array:', e);
+                assessmentsArray = [];
+            }
+        }
 
-export async function loadConcentrationNumbers(): Promise<MedicalOfficeAssessment.ConcentrationNumbers[] | null> {
-  const data = await AsyncStorage.getItem('concentrationNumbers');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.ConcentrationNumbers[] : null;
-}
+        // Generate a unique ID if assessment doesn't have one
+        if (!assessment.id) {
+            assessment.id = Date.now().toString();
+            console.log('Generated new ID for assessment:', assessment.id);
+        }
 
-export async function saveConcentrationMonths(concentrationMonths: MedicalOfficeAssessment.ConcentrationMonths) {
-  await AsyncStorage.setItem('concentrationMonths', JSON.stringify(concentrationMonths));
-}
+        // Find and update existing assessment by comparing all available identifiers
+        const existingIndex = assessmentsArray.findIndex(item => {
+            // First try to match by ID if both have IDs
+            if (item.id !== undefined && assessment.id !== undefined) {
+                return item.id === assessment.id;
+            }
+            
+            // If no ID match possible, try to match by content similarity
+            // This is a fallback for cases where IDs might not be set
+            if (item.symptoms && assessment.symptoms && 
+                JSON.stringify(item.symptoms) === JSON.stringify(assessment.symptoms)) {
+                return true;
+            }
+            
+            return false;
+        });
+        
+        if (existingIndex !== -1) {
+            assessmentsArray[existingIndex] = assessment;
+            console.log('Updated existing medical office assessment with id:', assessment.id);
+        } else {
+            assessmentsArray.push(assessment);
+            console.log('Added new medical office assessment with id:', assessment.id);
+        }
 
-export async function loadConcentrationMonths(): Promise<MedicalOfficeAssessment.ConcentrationMonths | null> {
-  const data = await AsyncStorage.getItem('concentrationMonths');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.ConcentrationMonths : null;
-}
+        await AsyncStorage.setItem(MEDICAL_OFFICE_ASSESSMENTS_KEY, JSON.stringify(assessmentsArray));
+        console.log('Medical office assessment saved successfully. Total assessments:', assessmentsArray.length);
+        
+        // For debugging: Log the saved array
+        const updatedAssessmentsRaw = await AsyncStorage.getItem(MEDICAL_OFFICE_ASSESSMENTS_KEY);
+        if (updatedAssessmentsRaw) {
+             console.log('Current assessments in storage:', JSON.parse(updatedAssessmentsRaw));
+        }
 
-export async function saveMbess(mbess: MedicalOfficeAssessment.Mbess) {
-  await AsyncStorage.setItem('mbess', JSON.stringify(mbess));
-}
+    } catch (error) {
+        console.error('Failed to update medical office assessment in AsyncStorage:', error);
+    }
+};
 
-export async function loadMbess(): Promise<MedicalOfficeAssessment.Mbess | null> {
-  const data = await AsyncStorage.getItem('mbess');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.Mbess : null;
-}
+export const getMedicalOfficeAssessments = async (): Promise<Partial<MedicalOfficeAssessment>[]> => {
+    try {
+        const assessmentsRaw = await AsyncStorage.getItem(MEDICAL_OFFICE_ASSESSMENTS_KEY);
+        
+        if (!assessmentsRaw) {
+            console.log('No medical office assessments found in storage');
+            return [];
+        }
 
-export async function saveTandemWalk(tandemWalk: MedicalOfficeAssessment.TandemWalk) {
-  await AsyncStorage.setItem('tandemWalk', JSON.stringify(tandemWalk));
-}
+        const assessments = JSON.parse(assessmentsRaw);
+        
+        if (!Array.isArray(assessments)) {
+            console.warn('Stored assessments data is not an array, returning empty array');
+            return [];
+        }
 
-export async function loadTandemWalk(): Promise<MedicalOfficeAssessment.TandemWalk | null> {
-  const data = await AsyncStorage.getItem('tandemWalk');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.TandemWalk : null;
-}
+        console.log('Retrieved', assessments.length, 'medical office assessments from storage');
+        return assessments;
+    } catch (error) {
+        console.error('Failed to retrieve medical office assessments:', error);
+        return [];
+    }
+};
 
-export async function saveDeferredMemory(deferredMemory: MedicalOfficeAssessment.DeferredMemory) {
-  await AsyncStorage.setItem('deferredMemory', JSON.stringify(deferredMemory));
-}
+export const deleteMedicalOfficeAssessment = async (assessmentId: string) => {
+    console.log('Attempting to delete medical office assessment with id:', assessmentId);
+    try {
+        const existingAssessmentsRaw = await AsyncStorage.getItem(MEDICAL_OFFICE_ASSESSMENTS_KEY);
+        let assessmentsArray: Partial<MedicalOfficeAssessment>[] = [];
 
-export async function loadDeferredMemory(): Promise<MedicalOfficeAssessment.DeferredMemory | null> {
-  const data = await AsyncStorage.getItem('deferredMemory');
-  return data ? JSON.parse(data) as MedicalOfficeAssessment.DeferredMemory : null;
-} 
+        if (existingAssessmentsRaw) {
+            try {
+                assessmentsArray = JSON.parse(existingAssessmentsRaw);
+                if (!Array.isArray(assessmentsArray)) {
+                    console.warn('Existing data is not an array, cannot delete.');
+                    return false;
+                }
+            } catch (e) {
+                console.error('Failed to parse existing assessments:', e);
+                return false;
+            }
+        }
+
+        // Filter out the assessment to delete
+        const initialLength = assessmentsArray.length;
+        assessmentsArray = assessmentsArray.filter(item => item.id !== assessmentId);
+        
+        if (assessmentsArray.length === initialLength) {
+            console.log('Assessment with id', assessmentId, 'not found');
+            return false;
+        }
+
+        await AsyncStorage.setItem(MEDICAL_OFFICE_ASSESSMENTS_KEY, JSON.stringify(assessmentsArray));
+        console.log('Medical office assessment deleted successfully. Remaining assessments:', assessmentsArray.length);
+        
+        return true;
+    } catch (error) {
+        console.error('Failed to delete medical office assessment from AsyncStorage:', error);
+        return false;
+    }
+};
+
+export const deleteAllMedicalOfficeAssessments = async () => {
+    console.log('Attempting to delete all medical office assessments');
+    try {
+        await AsyncStorage.removeItem(MEDICAL_OFFICE_ASSESSMENTS_KEY);
+        console.log('All medical office assessments deleted successfully');
+        return true;
+    } catch (error) {
+        console.error('Failed to delete all medical office assessments from AsyncStorage:', error);
+        return false;
+    }
+};
+

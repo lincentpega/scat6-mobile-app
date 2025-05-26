@@ -5,6 +5,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
+import { useFormContext } from '@/contexts/FormContext';
+import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 
 const DIGIT_LISTS = {
     A: [
@@ -28,6 +30,7 @@ const DIGIT_LISTS = {
 };
 
 export default function ConcentrationNumbers() {
+    const { medicalOfficeAssessment, updateConcentrationNumbers } = useFormContext();
     const [selectedList, setSelectedList] = useState<'A' | 'B' | 'V'>('A');
     // answers[trialIdx][rowIdx] = true/false
     const [answers, setAnswers] = useState(
@@ -51,7 +54,12 @@ export default function ConcentrationNumbers() {
     const score = answers.filter(arr => arr[0]).length;
 
     const handleSubmit = () => {
-        // TODO: navigate to the next screen or save results
+        // Сохраняем только название листа и score
+        const newEntry: MedicalOfficeAssessment.ConcentrationNumbers = {
+            numberList: selectedList,
+            score,
+        };
+        updateConcentrationNumbers(newEntry);
         router.push('/(testing-form)/concentration-months');
     };
 

@@ -6,7 +6,7 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
-import { saveSymptoms, loadSymptoms } from '@/services/medicalOfficeAssessmentStorageService';
+import { useFormContext } from '@/contexts/FormContext';
 
 interface Symptom {
   id: string;
@@ -86,7 +86,7 @@ function YesNoButtonGroup({ value, onChange }: { value: boolean | null; onChange
 }
 
 export default function SymptomsQuestionary() {
-  // Initialize state with default values matching the Symptoms interface
+  const { medicalOfficeAssessment, updateSymptoms } = useFormContext();
   const [symptoms, setSymptoms] = useState<MedicalOfficeAssessment.Symptoms>({
     headache: 0,
     headPressure: 0,
@@ -115,29 +115,21 @@ export default function SymptomsQuestionary() {
     wellnessPercent: 100,
     not100Reason: '',
   });
-  
-  // Load saved data on component mount
-  useEffect(() => {
-    (async () => {
-      const loadedSymptoms = await loadSymptoms();
-      if (loadedSymptoms) {
-        console.log("Loaded symptoms data from storage:", JSON.stringify(loadedSymptoms, null, 2));
-        setSymptoms(loadedSymptoms);
-      }
-    })();
-  }, []);
 
-  // Update symptom score
+  useEffect(() => {
+    if (medicalOfficeAssessment.symptoms) {
+      setSymptoms(medicalOfficeAssessment.symptoms);
+    }
+  }, [medicalOfficeAssessment.symptoms]);
+
   const handleScoreChange = (id: string, value: number) => {
     setSymptoms(prev => ({ ...prev, [id]: value }));
   };
 
-  // Update yes/no answer
   const handleYesNoChange = (key: string, value: boolean) => {
     setSymptoms(prev => ({ ...prev, [key]: value }));
   };
 
-  // Handle wellness percent change
   const handlePercentChange = (text: string) => {
     const numericValue = parseInt(text) || 0;
     setSymptoms(prev => ({ ...prev, wellnessPercent: numericValue }));
@@ -147,22 +139,15 @@ export default function SymptomsQuestionary() {
     setSymptoms(prev => ({ ...prev, not100Reason: text }));
   };
 
-  // Handle form submission
-  const handleSubmit = async () => {
-    try {
-      await saveSymptoms(symptoms);
-      console.log("Symptoms data saved to storage:", JSON.stringify(symptoms, null, 2));
-      router.push('/(testing-form)/orientation-assessment');
-    } catch (e) {
-      console.error("Failed to save symptoms data", e);
-    }
+  const handleSubmit = () => {
+    updateSymptoms(symptoms);
+    router.push('/(testing-form)/orientation-assessment');
   };
 
   return (
     <ScrollViewKeyboardAwareContainer contentContainerStyle={{ alignItems: 'flex-start' }}>
       <View style={styles.container}>
         <Text style={styles.title}>Пожалуйста, передайте опросник спортсмену</Text>
-        
         <View style={styles.symptomsContainer}>
           {SYMPTOMS.map((symptom) => (
             <View key={symptom.id} style={styles.symptomRow}>
@@ -174,7 +159,6 @@ export default function SymptomsQuestionary() {
             </View>
           ))}
         </View>
-        
         <View style={styles.section}>
           {YES_NO_QUESTIONS.map((q) => (
             <View key={q.key} style={styles.yesNoRow}>
@@ -186,7 +170,6 @@ export default function SymptomsQuestionary() {
             </View>
           ))}
         </View>
-        
         <View style={styles.section}>
           <InputLabel label="Если считать 100% абсолютно нормальным показателем, то на сколько вы оцениваете свое самочувствие в процентах?" />
           <TextInputField
@@ -196,7 +179,6 @@ export default function SymptomsQuestionary() {
             keyboardType="numeric"
             style={{ marginBottom: 10 }}
           />
-          
           <InputLabel label="Если не на 100%, то почему?" />
           <TextInputField
             placeholder="Опишите причину..."
@@ -207,7 +189,6 @@ export default function SymptomsQuestionary() {
             style={{ height: 80 }}
           />
         </View>
-        
         <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 20 }} />
       </View>
     </ScrollViewKeyboardAwareContainer>

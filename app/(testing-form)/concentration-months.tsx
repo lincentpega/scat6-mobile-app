@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import LabeledPicker from '@/components/LabeledPicker';
 import SubmitButton from '@/components/SubmitButton';
@@ -6,6 +6,8 @@ import InputLabel from '@/components/InputLabel';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import Timer from '@/components/Timer';
+import { useFormContext } from '@/contexts/FormContext';
+import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 
 const MONTHS_REVERSED = [
   'ДЕКАБРЬ',
@@ -23,6 +25,7 @@ const MONTHS_REVERSED = [
 ];
 
 export default function ConcentrationMonths() {
+  const { updateConcentrationMonths } = useFormContext();
   const [time, setTime] = useState('');
   const [errors, setErrors] = useState('0');
 
@@ -30,8 +33,18 @@ export default function ConcentrationMonths() {
   const errorsNum = parseInt(errors, 10);
   const result = (!isNaN(timeNum) && !isNaN(errorsNum) && errorsNum === 0 && timeNum < 30) ? 1 : 0;
 
+  const handleTimerChange = useCallback((seconds: number) => {
+    setTime(seconds.toString());
+  }, []);
+
   const handleSubmit = () => {
-    // TODO: Save result or navigate as needed
+    // Сохраняем errors и время (seconds) в контекст
+    const data: MedicalOfficeAssessment.ConcentrationMonths = {
+      errors: isNaN(errorsNum) ? 0 : errorsNum,
+      time: isNaN(timeNum) ? 0 : timeNum,
+      score: result,
+    };
+    updateConcentrationMonths(data);
     router.push('/(testing-form)/coordination-and-balance-info');
   };
 
@@ -51,7 +64,10 @@ export default function ConcentrationMonths() {
             <Text key={month} style={styles.monthItem}>{month}{idx < MONTHS_REVERSED.length - 1 ? ' – ' : ''}</Text>
           ))}
         </View>
-        <Timer onChange={sec => setTime(sec.toString())} style={{ alignSelf: 'center', marginBottom: 10 }} />
+        <Timer 
+          onChange={handleTimerChange}
+          style={{ alignSelf: 'center', marginBottom: 10 }} 
+        />
         <View style={styles.inputRow}>
           <View style={{ flex: 1, marginRight: 8 }}>
             <InputLabel label="Время (секунды)" />

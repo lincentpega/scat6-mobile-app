@@ -13,9 +13,11 @@ import { useAthleteContext } from '@/contexts/AthleteContext';
 import CustomDatePicker from '@/components/CustomDatePicker';
 import CustomTimePicker from '@/components/CustomTimePicker';
 import CheckboxField from '@/components/CheckboxField';
+import { useFormContext } from '@/contexts/FormContext';
 
 export default function AthleteInfo() {
   const { athleteId } = useAthleteContext();
+  const { setIsFormActive } = useFormContext();
   
   const [athlete, setAthlete] = useState<Sportsman>({
     id: undefined,
@@ -93,11 +95,13 @@ export default function AthleteInfo() {
   }
 
   const handleBasicTesting = () => {
-    router.push("/(testing-form)/symptoms-questionary");
+    router.replace("/(testing-form)/symptoms-questionary");
+    setIsFormActive(true);
   }
 
   const handlePostInjuryTesting = () => {
-    router.push("/(testing-form)/observable-signs");
+    router.replace("/(testing-form)/observable-signs");
+    setIsFormActive(true);
   }
 
   return (

@@ -5,7 +5,7 @@ import { StyleSheet, View, Text } from 'react-native';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
-import { saveOrientationAssessment, loadOrientationAssessment } from '@/services/medicalOfficeAssessmentStorageService';
+import { useFormContext } from '@/contexts/FormContext';
 
 const ORIENTATION_QUESTIONS = [
   { key: 'month', label: 'Какой сейчас месяц?' },
@@ -16,7 +16,7 @@ const ORIENTATION_QUESTIONS = [
 ];
 
 export default function OrientationAssessment() {
-  // Initialize state with default values matching the OrientationAssessment interface
+  const { medicalOfficeAssessment, updateOrientationAssessment } = useFormContext();
   const [orientationAssessment, setOrientationAssessment] = useState<MedicalOfficeAssessment.OrientationAssessment>({
     month: false,
     date: false,
@@ -26,18 +26,12 @@ export default function OrientationAssessment() {
     score: 0,
   });
 
-  // Load saved data on component mount
   useEffect(() => {
-    (async () => {
-      const loadedOrientationAssessment = await loadOrientationAssessment();
-      if (loadedOrientationAssessment) {
-        console.log("Loaded orientation assessment data from storage:", JSON.stringify(loadedOrientationAssessment, null, 2));
-        setOrientationAssessment(loadedOrientationAssessment);
-      }
-    })();
-  }, []);
+    if (medicalOfficeAssessment.orientationAssessment) {
+      setOrientationAssessment(medicalOfficeAssessment.orientationAssessment);
+    }
+  }, [medicalOfficeAssessment.orientationAssessment]);
 
-  // Calculate score whenever answers change
   useEffect(() => {
     const newScore = ORIENTATION_QUESTIONS.reduce((sum, q) => 
       sum + (orientationAssessment[q.key as keyof MedicalOfficeAssessment.OrientationAssessment] ? 1 : 0), 0
@@ -52,14 +46,9 @@ export default function OrientationAssessment() {
     }));
   };
 
-  const handleSubmit = async () => {
-    try {
-      await saveOrientationAssessment(orientationAssessment);
-      console.log("Orientation assessment data saved to storage:", JSON.stringify(orientationAssessment, null, 2));
-      router.push('/(testing-form)/short-term-memory');
-    } catch (e) {
-      console.error("Failed to save orientation assessment data", e);
-    }
+  const handleSubmit = () => {
+    updateOrientationAssessment(orientationAssessment);
+    router.push('/(testing-form)/short-term-memory');
   };
 
   return (

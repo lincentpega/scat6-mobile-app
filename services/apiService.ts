@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getValidAccessToken } from './authService';
 import { Sportsman, SportsmanSearchResult } from '@/model/Sportsman';
 import { ImmediateAssessment } from '@/model/ImmediateAssessment';
+import { MedicalOfficeAssessment } from '@/model';
 
 // Base API URL - using the same IP as auth service
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://192.168.0.106:8080';
@@ -39,9 +40,15 @@ export async function sendSportsman(sportsman: Sportsman): Promise<Sportsman> {
   });
 }
 
-/**
- * Send immediate assessment data to backend
- */
+export async function sendMedicalOfficeAssessment(
+  assessment: MedicalOfficeAssessment
+): Promise<MedicalOfficeAssessment> {
+  return apiRequest<MedicalOfficeAssessment>('/api/medical-office-assessments', {
+    method: 'POST',
+    data: assessment,
+  });
+}
+
 export async function sendImmediateAssessment(
   assessment: ImmediateAssessment
 ): Promise<ImmediateAssessment> {
@@ -56,7 +63,7 @@ export async function fetchAthletes(page: number, limit: number, fullNamePrefix?
     page,
     limit,
   };
-  
+
   if (fullNamePrefix) {
     params.fullNamePrefix = fullNamePrefix;
   }

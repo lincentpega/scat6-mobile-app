@@ -6,15 +6,24 @@ import TextInputField from '@/components/TextInputField';
 import { View, Text, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
+import { useFormContext } from '@/contexts/FormContext';
+import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 
 export default function CoordinationAndBalanceInfo() {
-  const [leg, setLeg] = useState<'right' | 'left' | ''>('');
-  const [surface, setSurface] = useState('');
-  const [footwear, setFootwear] = useState('');
+  const { medicalOfficeAssessment, updateMbessInfo } = useFormContext();
+  const [leg, setLeg] = useState<'right' | 'left' | ''>(
+    medicalOfficeAssessment.mbessInfo?.legTested || ''
+  );
+  const [surface, setSurface] = useState(medicalOfficeAssessment.mbessInfo?.surface || '');
+  const [footwear, setFootwear] = useState(medicalOfficeAssessment.mbessInfo?.footwear || '');
 
   const handleSubmit = () => {
-    // TODO: Save data if needed
-    console.log('coordination-and-balance-info', { leg, surface, footwear });
+    const dataToSave: MedicalOfficeAssessment.MbessInfo = {
+      legTested: leg,
+      surface,
+      footwear,
+    };
+    updateMbessInfo(dataToSave);
     router.push('/(testing-form)/coordination-and-balance-mbess');
   };
 

@@ -1,8 +1,8 @@
 export interface ImmediateAssessment {
   id?: number;
+  sportsmanId?: string;
   startDate: string; // ISO datetime string
   endDate: string; // ISO datetime string
-  sportsmanId: number;
   observableSigns: ImmediateAssessment.ObservableSigns;
   neckSpineAssessment: ImmediateAssessment.NeckSpineAssessment;
   glasgowScale: ImmediateAssessment.GlasgowScale;
