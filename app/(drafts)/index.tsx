@@ -9,6 +9,7 @@ import { SportsmanSearchItem } from '@/model/Sportsman';
 import AthleteSelectionModal from '@/components/AthleteSelectionModal';
 import SubmitButton from '@/components/SubmitButton';
 import { useAuth } from '@/context/AuthContext';
+import { sendImmediateAssessment, sendMedicalOfficeAssessment } from '@/services/apiService';
 
 type Draft = Partial<ImmediateAssessment> | Partial<MedicalOfficeAssessment>;
 
@@ -109,9 +110,79 @@ export default function TestingFormScreen() {
         }
     };
 
-    const handleSubmitDraft = (draft: Draft) => {
-        // TODO: Implement form submission to server
-        console.log('Submitting draft:', draft);
+    const handleSubmitDraft = async (draft: Draft) => {
+        if (!isUserLoggedIn || !draft.sportsmanId) {
+            Alert.alert('Ошибка', 'Необходимо выбрать спортсмена перед отправкой');
+            return;
+        }
+
+        try {
+            if ('observableSigns' in draft) {
+                // It's an ImmediateAssessment - cast to complete object
+                const immediateAssessment = draft as Partial<ImmediateAssessment>;
+                
+                const completeAssessment: ImmediateAssessment = {
+                    id: immediateAssessment.id,
+                    sportsmanId: immediateAssessment.sportsmanId!,
+                    startDate: immediateAssessment.startDate!,
+                    endDate: immediateAssessment.endDate!,
+                    observableSigns: immediateAssessment.observableSigns!,
+                    neckSpineAssessment: immediateAssessment.neckSpineAssessment!,
+                    glasgowScale: immediateAssessment.glasgowScale!,
+                    coordinationEyeMovement: immediateAssessment.coordinationEyeMovement!,
+                    maddocksQuestions: immediateAssessment.maddocksQuestions!,
+                };
+                
+                console.log('Submitting immediate assessment:', completeAssessment);
+                await sendImmediateAssessment(completeAssessment);
+                
+                // Remove from local storage after successful submission
+                await deleteImmediateAssessment(draft.id as number);
+                setImmediateDrafts(prevDrafts => prevDrafts.filter(d => d.id !== draft.id));
+                
+                Alert.alert('Успех', 'Базовое тестирование успешно отправлено на сервер');
+            } else {
+                // It's a MedicalOfficeAssessment - cast to complete object
+                const medicalAssessment = draft as Partial<MedicalOfficeAssessment>;
+                
+                // Validate required fields
+                if (!medicalAssessment.sportsmanId) {
+                    Alert.alert('Ошибка', 'Необходимо выбрать спортсмена');
+                    return;
+                }
+                
+                const completeAssessment: MedicalOfficeAssessment = {
+                    id: medicalAssessment.id,
+                    sportsmanId: medicalAssessment.sportsmanId,
+                    symptoms: medicalAssessment.symptoms,
+                    orientationAssessment: medicalAssessment.orientationAssessment,
+                    cognitiveFunctions: medicalAssessment.cognitiveFunctions,
+                    shortTermMemory: medicalAssessment.shortTermMemory,
+                    concentrationNumbers: medicalAssessment.concentrationNumbers,
+                    concentrationMonths: medicalAssessment.concentrationMonths,
+                    mbessInfo: medicalAssessment.mbessInfo,
+                    mbessTestResults: medicalAssessment.mbessTestResults,
+                    tandemWalkIsolatedTask: medicalAssessment.tandemWalkIsolatedTask,
+                    tandemWalkDualTask: medicalAssessment.tandemWalkDualTask,
+                    tandemWalkResult: medicalAssessment.tandemWalkResult,
+                    deferredMemory: medicalAssessment.deferredMemory,
+                    wasKnownBefore: medicalAssessment.wasKnownBefore,
+                    differsFromKnownBefore: medicalAssessment.differsFromKnownBefore,
+                };
+                
+                console.log('Submitting medical office assessment:', completeAssessment);
+                await sendMedicalOfficeAssessment(completeAssessment);
+                
+                // Remove from local storage after successful submission
+                await deleteMedicalOfficeAssessment(draft.id as string);
+                setMedicalOfficeDrafts(prevDrafts => prevDrafts.filter(d => d.id !== draft.id));
+                
+                Alert.alert('Успех', 'Тестирование после травмы успешно отправлено на сервер');
+            }
+        } catch (error) {
+            console.error('Error submitting draft:', error);
+            Alert.alert('Ошибка', 'Не удалось отправить форму на сервер. Проверьте подключение к интернету.');
+        }
     };
 
     const handleDeleteDraft = async (draft: Draft) => {
