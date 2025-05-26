@@ -46,7 +46,12 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
   // ImmediateAssessment update functions
   const updateObservableSigns = (data: ImmediateAssessment.ObservableSigns) => {
     setImmediateAssessment(prev => {
-      const updated = { ...prev, observableSigns: data };
+      const updated = { 
+        ...prev, 
+        observableSigns: data,
+        // Set startDate automatically if not already set
+        startDate: prev.startDate || new Date().toISOString()
+      };
       console.log('updateObservableSigns, immediateAssessment:', updated);
       return updated;
     });
@@ -76,6 +81,7 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
     setImmediateAssessment(prev => {
       const updated = { ...prev, maddocksQuestions: data };
       console.log('updateMaddocksQuestions, immediateAssessment:', updated);
+      updated.endDate = prev.endDate || new Date().toISOString();
       return updated;
     });
   };
