@@ -1,14 +1,7 @@
 import ScrollViewKeyboardAwareContainer from "@/components/Container";
-import SubmitButton from "@/components/SubmitButton";
-import { router } from "expo-router";
 import { StyleSheet, View, Text } from "react-native";
 
 export default function RedFlags() {
-    const handleSubmit = () => {
-        console.log("Submit red flags");
-        router.push("/(athlete)/athlete-info");
-    }
-
     return (
         <ScrollViewKeyboardAwareContainer contentContainerStyle={{ alignItems: "flex-start" }}>
             <View style={styles.inputContainer}>
@@ -28,7 +21,6 @@ export default function RedFlags() {
                     <Text style={styles.text}>• ШКГ &lt; 15</Text>
                     <Text style={styles.text}>• Видимая деформация черепа</Text>
                 </View>
-                <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 20 }} />
             </View>
         </ScrollViewKeyboardAwareContainer>
     );
@@ -39,6 +31,7 @@ const styles = StyleSheet.create({
         width: "100%",
         alignItems: "center",
         paddingHorizontal: 20,
+        marginTop: 100,
     },
     text: {
         fontSize: 16,

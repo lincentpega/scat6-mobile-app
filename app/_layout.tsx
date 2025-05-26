@@ -22,6 +22,10 @@ const FormTabIcon = ({ color, size }: { color: string; size: number }) => (
   <Ionicons name="document-text-outline" color={color} size={size} />
 );
 
+const RedFlagsTabIcon = ({ color, size }: { color: string; size: number }) => (
+  <Ionicons name="warning-outline" color={color} size={size} />
+);
+
 // Новый внутренний компонент, который будет иметь доступ к AuthContext
 function LayoutContent() {
   const colorScheme = useColorScheme();
@@ -60,6 +64,15 @@ function LayoutContent() {
           }}
         />
         <Tabs.Screen
+          name="red-flags"
+          options={{
+            title: 'Красные флаги',
+            tabBarLabel: 'Красные флаги',
+            headerShown: false,
+            tabBarIcon: RedFlagsTabIcon,
+          }}
+        />
+        <Tabs.Screen
           name="(athlete)"
           options={{
             title: 'Спортсмен',
@@ -69,16 +82,16 @@ function LayoutContent() {
             tabBarIcon: FormTabIcon,
           }}
         />
-          <Tabs.Screen
-            name="(testing-form)"
-            options={{
-              title: 'Форма',
-              tabBarLabel: 'Форма',
-              headerShown: false,
-              href: isUserLoggedIn ? undefined : null,
-              tabBarIcon: FormTabIcon,
-            }}
-          />
+        <Tabs.Screen
+          name="(testing-form)"
+          options={{
+            title: 'Форма',
+            tabBarLabel: 'Форма',
+            headerShown: false,
+            href: isUserLoggedIn ? undefined : null,
+            tabBarIcon: FormTabIcon,
+          }}
+        />
       </Tabs>
       <StatusBar style="auto" />
     </ThemeProvider>
@@ -89,7 +102,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AthleteProvider>
-        <LayoutContent /> 
+        <LayoutContent />
       </AthleteProvider>
     </AuthProvider>
   );

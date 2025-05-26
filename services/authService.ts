@@ -2,7 +2,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as SecureStore  from 'expo-secure-store';
 import {jwtDecode} from 'jwt-decode';
 
-const issuer   = 'http://172.20.10.2:8788/realms/scat6-app';
+const issuer   = 'http://192.168.0.106:8788/realms/scat6-app';
 const clientId = 'mobile-app';
 const scheme   = 'scat6-app';
 const discoveryPromise = AuthSession.fetchDiscoveryAsync(issuer);
