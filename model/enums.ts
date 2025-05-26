@@ -1,10 +1,10 @@
 export enum Gender {
-  MALE = 'MALE',
-  FEMALE = 'FEMALE',
+  MALE,
+  FEMALE,
 }
 
 export enum LeadingHand {
-  LEFT = 'LEFT',
-  RIGHT = 'RIGHT',
-  AMBIDEXTROUS = 'AMBIDEXTROUS',
+  LEFT,
+  RIGHT,
+  AMBIDEXTROUS,
 } 
