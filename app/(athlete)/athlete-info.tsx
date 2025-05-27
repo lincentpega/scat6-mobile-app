@@ -44,6 +44,14 @@ export default function AthleteInfo() {
   });
 
   useEffect(() => {
+    // Set inspection date to current date automatically
+    setAthlete(prev => ({
+      ...prev,
+      inspectionDate: new Date().toISOString()
+    }));
+  }, []);
+
+  useEffect(() => {
     (async () => {
       try {
         console.log("athleteId from context:", athleteId)
@@ -117,14 +125,8 @@ export default function AthleteInfo() {
           />
         </View>
 
-        <CustomDatePicker
-          label="Дата осмотра"
-          value={athlete.inspectionDate}
-          onValueChange={isoDate => setAthlete(prev => ({ ...prev, inspectionDate: isoDate }))}
-          placeholder="Выберите дату осмотра"
-          required={true}
-          limitToPastOrToday={true}
-        />
+
+        {/* TODO: add auto set for inspection date */}
 
         <View style={styles.inputField}>
           <TextInputField

@@ -7,6 +7,7 @@ import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
 import { useFormContext } from "@/contexts/FormContext";
 import { saveImmediateAssessment } from '@/services/immediateAssessmentStorageService';
 import { useAthleteContext } from '@/contexts/AthleteContext';
+import { router } from 'expo-router';
 
 const QUESTIONS = [
   { key: 'event', label: 'На каком мероприятии мы сегодня находимся?' },
@@ -45,6 +46,7 @@ export default function MaddocksQuestions() {
     saveImmediateAssessment(immediateAssessment);
     clearImmediateAssessment();
     setIsFormActive(false);
+    router.push("/(drafts)")
   };
 
   return (

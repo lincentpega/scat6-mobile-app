@@ -7,6 +7,7 @@ import { useFormContext } from '@/contexts/FormContext';
 import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 import { saveMedicalOfficeAssessment } from '@/services/medicalOfficeAssessmentStorageService';
 import { useAthleteContext } from '@/contexts/AthleteContext';
+import { router } from 'expo-router';
 
 const WORD_LISTS = {
   A: ['Куртка', 'Стрела', 'Перец', 'Хлопок', 'Кино', 'Доллар', 'Мёд', 'Зеркало', 'Седло', 'Якорь'],
@@ -65,6 +66,7 @@ export default function DeferredMemory() {
     saveMedicalOfficeAssessment(medicalOfficeAssessment);
     clearMedicalOfficeAssessment();
     setIsFormActive(false);
+    router.navigate('/(drafts)');
   };
 
   return (

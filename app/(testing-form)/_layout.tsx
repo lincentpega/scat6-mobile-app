@@ -4,13 +4,6 @@ export default function TestingFormLayout() {
   return (
     <Stack>
       <Stack.Screen
-        name="index"
-        options={{
-          title: "Тестирование",
-          headerBackTitle: "Назад"
-        }}
-      />
-      <Stack.Screen
         name="observable-signs"
         options={{
           title: "Видимые признаки",
