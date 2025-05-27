@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import KeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
+import TextInputField from '@/components/TextInputField';
 import { useAuth } from '@/context/AuthContext';
 import { router } from 'expo-router';
 import { useFormContext } from '@/contexts/FormContext';
+import { useAthleteContext } from '@/contexts/AthleteContext';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const { isUserLoggedIn, userFullName, signIn, logout } = useAuth();
   const { setIsFormActive, isFormActive, resetForm } = useFormContext();
+  const { setAthleteId, setAthleteTmpFullName, athleteTmpFullName } = useAthleteContext();
 
   const handleSignInPress = async () => {
     setLoading(true);
@@ -36,6 +39,7 @@ export default function HomeScreen() {
 
   const handleResetForm = () => {
     resetForm();
+    setAthleteId(null);
   };
 
   if (loading) {
@@ -53,9 +57,9 @@ export default function HomeScreen() {
         {isUserLoggedIn && userFullName && (
           <View style={{ alignItems: 'center', marginTop: 10 }}>
             <Text style={styles.nameText}>Добро пожаловать, {userFullName}</Text>
-            <SubmitButton 
-              onPress={handleLogoutPress} 
-              text="Выйти" 
+            <SubmitButton
+              onPress={handleLogoutPress}
+              text="Выйти"
               style={{
                 marginTop: 10,
                 paddingHorizontal: 30,
@@ -68,17 +72,30 @@ export default function HomeScreen() {
 
       <View style={styles.inputContainer}>
         {!isUserLoggedIn && (
-          <SubmitButton onPress={handleSignInPress} text="Войти" />
-        )}
-        <SubmitButton style={{ marginTop: 20 }} onPress={handleBasicTesting} text="Базовое тестирование" />
-        <SubmitButton style={{ marginTop: 10 }} onPress={handlePostInjuryTesting} text="Тестирование после травмы" />
-        {isFormActive && (
-              <SubmitButton 
-                style={{ marginTop: 10, backgroundColor: '#ff4444' }} 
-                onPress={handleResetForm} 
-                text="Сбросить форму" 
+          <>
+            <SubmitButton onPress={handleSignInPress} text="Войти" />
+            
+            <Text style={{ marginTop: 70, color: '#000', fontSize: 20, fontWeight: 'bold' }}>Оффлайн тестирование</Text>
+            <View style={{ marginTop: 10, width: '100%' }}>
+              <TextInputField
+                placeholder="Введите имя спортсмена"
+                value={athleteTmpFullName || ''}
+                onChangeText={setAthleteTmpFullName}
+                label="Имя спортсмена"
               />
-            )}
+            </View>
+            <SubmitButton style={{ marginTop: 20 }} onPress={handleBasicTesting} text="Базовое тестирование" />
+            <SubmitButton style={{ marginTop: 10 }} onPress={handlePostInjuryTesting} text="Тестирование после травмы" />
+          </>
+        )}
+
+        {isFormActive && (
+          <SubmitButton
+            style={{ marginTop: 10, backgroundColor: '#ff4444' }}
+            onPress={handleResetForm}
+            text="Сбросить форму"
+          />
+        )}
       </View>
     </KeyboardAwareContainer>
   );

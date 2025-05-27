@@ -22,12 +22,12 @@ const CustomTimePicker: React.FC<CustomTimePickerProps> = ({
   const [isPickerVisible, setIsPickerVisible] = useState(false);
 
   useEffect(() => {
-    if (value && typeof value === 'string') {
-      const parts = value.split(':');
+    if (value && typeof value === 'string' && value.trim()) {
+      const parts = value.trim().split(':');
       if (parts.length === 2) {
         const hours = parseInt(parts[0], 10);
         const minutes = parseInt(parts[1], 10);
-        if (!isNaN(hours) && !isNaN(minutes)) {
+        if (!isNaN(hours) && !isNaN(minutes) && hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
           const dateForPicker = new Date();
           dateForPicker.setHours(hours, minutes, 0, 0);
           setPickerTimeValue(dateForPicker);
@@ -36,12 +36,11 @@ const CustomTimePicker: React.FC<CustomTimePickerProps> = ({
       }
     }
     // If value is invalid or not set, default picker to current time
-    // or keep previous valid pickerTimeValue if desired (current approach resets to now)
     setPickerTimeValue(new Date()); 
   }, [value]);
 
   const displayTimeFormatted = () => {
-    if (value) { // Value is already expected to be HH:mm or undefined
+    if (value && value.trim()) { // Value is already expected to be HH:mm or undefined
       return value;
     }
     return placeholder;
@@ -63,7 +62,7 @@ const CustomTimePicker: React.FC<CustomTimePickerProps> = ({
     }
   };
 
-  const isPlaceholder = !value; // Check if the value prop is falsy
+  const isPlaceholder = !value || !value.trim(); // Check if the value prop is falsy or empty
 
   return (
     <View style={styles.inputFieldContainer}>

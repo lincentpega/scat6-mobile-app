@@ -1,6 +1,7 @@
 export interface ImmediateAssessment {
   id?: number;
   sportsmanId?: string;
+  athleteTmpFullName?: string;
   startDate: string; // ISO datetime string
   endDate: string; // ISO datetime string
   observableSigns: ImmediateAssessment.ObservableSigns;

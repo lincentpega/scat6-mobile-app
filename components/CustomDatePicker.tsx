@@ -24,7 +24,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   const [isPickerVisible, setIsPickerVisible] = useState(false);
 
   useEffect(() => {
-    if (value && !isNaN(new Date(value).getTime())) {
+    if (value && value.trim() && !isNaN(new Date(value).getTime())) {
       let initialDate = new Date(value);
       // If limitToPastOrToday is true, and initialDate is in the future, clamp it to now for the picker UI.
       // The actual saved value will still be what was passed until a new selection is made.
@@ -33,15 +33,13 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
       }
       setPickerDateValue(initialDate);
     } else {
-      if (!value) {
-        // Default to today if no value, respecting the limit if applicable for the initial picker display
-        setPickerDateValue(limitToPastOrToday && new Date() > new Date() ? new Date() : new Date()); 
-      }
+      // Default to today if no value or invalid value
+      setPickerDateValue(new Date()); 
     }
   }, [value, limitToPastOrToday]);
 
   const displayDateFormatted = () => {
-    if (value && !isNaN(new Date(value).getTime())) {
+    if (value && value.trim() && !isNaN(new Date(value).getTime())) {
       return new Date(value).toLocaleDateString('ru-RU');
     }
     return placeholder;
@@ -68,7 +66,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     }
   };
 
-  const isPlaceholder = !value; // Check if the value prop is falsy
+  const isPlaceholder = !value || !value.trim(); // Check if the value prop is falsy or empty
 
   return (
     <View style={styles.inputFieldContainer}> 

@@ -10,11 +10,20 @@ type SubmitButtonProps = {
 const SubmitButton = ({ onPress, disabled, text, style }: SubmitButtonProps) => {
   return (
     <Pressable
-      style={[styles.button, style]}
+      style={[
+        styles.button, 
+        disabled && styles.buttonDisabled, 
+        style
+      ]}
       onPress={onPress}
       disabled={disabled}
     >
-      <Text style={styles.buttonText}>{text}</Text>
+      <Text style={[
+        styles.buttonText,
+        disabled && styles.buttonTextDisabled
+      ]}>
+        {text}
+      </Text>
     </Pressable>
   );
 };
@@ -28,10 +37,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  buttonDisabled: {
+    backgroundColor: "#CCCCCC",
+    opacity: 0.6,
+  },
   buttonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "500",
+  },
+  buttonTextDisabled: {
+    color: "#999999",
   },
 });
 

@@ -1,6 +1,6 @@
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import TextInputField from '@/components/TextInputField';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Platform, StyleSheet, View, Text } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import LabeledPicker from '@/components/LabeledPicker';
@@ -42,6 +42,12 @@ export default function AthleteInfo() {
     depressionAnxiety: undefined,
     currentMedications: undefined,
   });
+
+  // Validate required fields
+  const isFormValid = useMemo(() => {
+    return athlete.fullName.trim() !== '' &&
+           athlete.sportType.trim() !== '';
+  }, [athlete.fullName, athlete.sportType]);
 
   useEffect(() => {
     // Set inspection date to current date automatically
@@ -138,12 +144,13 @@ export default function AthleteInfo() {
           />
         </View>
 
+        {/* Hidden injury date and time fields - now optional
         <CustomDatePicker
           label="Дата получения травмы"
           value={athlete.injuryDate}
           onValueChange={isoDate => setAthlete(prev => ({ ...prev, injuryDate: isoDate }))}
           placeholder="Выберите дату травмы"
-          required={true}
+          required={false}
           limitToPastOrToday={true}
         />
 
@@ -152,8 +159,9 @@ export default function AthleteInfo() {
           value={athlete.injuryTime}
           onValueChange={timeString => setAthlete(prev => ({ ...prev, injuryTime: timeString }))}
           placeholder="Выберите время травмы"
-          required={true}
+          required={false}
         />
+        */}
 
         <View style={styles.inputField}>
           <LabeledPicker label="Пол" selectedValue={athlete.gender} onValueChange={itemValue => setAthlete(a => ({ ...a, gender: itemValue as Gender }))}>
@@ -164,7 +172,7 @@ export default function AthleteInfo() {
 
         <CustomDatePicker
           label="Дата рождения"
-          value={athlete.birthDate} // birthDate can be '' which CustomDatePicker should handle
+          value={athlete.birthDate || ''} // Safely handle null/undefined
           onValueChange={isoDate => setAthlete(prev => ({ ...prev, birthDate: isoDate || '' }))} // Ensure empty string if undefined
           placeholder="Выберите дату рождения"
           required={false}
@@ -200,8 +208,12 @@ export default function AthleteInfo() {
           <TextInputField
             label="Год обучения в спортивной школе"
             placeholder="Введите год обучения"
-            value={athlete.yearOfStudy !== undefined ? athlete.yearOfStudy.toString() : ''}
-            onChangeText={text => setAthlete(a => ({ ...a, yearOfStudy: text ? parseInt(text) : undefined }))}
+            value={athlete.yearOfStudy !== undefined && athlete.yearOfStudy !== null ? athlete.yearOfStudy.toString() : ''}
+            onChangeText={text => {
+              const trimmedText = text.trim();
+              const parsedValue = trimmedText && !isNaN(Number(trimmedText)) ? parseInt(trimmedText, 10) : undefined;
+              setAthlete(a => ({ ...a, yearOfStudy: parsedValue }));
+            }}
             keyboardType="number-pad"
           />
         </View>
@@ -209,8 +221,12 @@ export default function AthleteInfo() {
           <TextInputField
             label="Завершенное количество лет обучения"
             placeholder="Количество завершенных лет обучения"
-            value={athlete.completedYears !== undefined ? athlete.completedYears.toString() : ''}
-            onChangeText={text => setAthlete(a => ({ ...a, completedYears: text ? parseInt(text) : undefined }))}
+            value={athlete.completedYears !== undefined && athlete.completedYears !== null ? athlete.completedYears.toString() : ''}
+            onChangeText={text => {
+              const trimmedText = text.trim();
+              const parsedValue = trimmedText && !isNaN(Number(trimmedText)) ? parseInt(trimmedText, 10) : undefined;
+              setAthlete(a => ({ ...a, completedYears: parsedValue }));
+            }}
             keyboardType="number-pad"
           />
         </View>
@@ -302,7 +318,7 @@ export default function AthleteInfo() {
           />
         </View>
 
-        <SubmitButton style={{ marginBottom: 20 }} onPress={handleSaveAthlete} text="Сохранить" />
+        <SubmitButton style={{ marginBottom: 20 }} onPress={handleSaveAthlete} text="Сохранить" disabled={!isFormValid} />
         
         <Text style={styles.testingLabel}>ТЕСТИРОВАНИЕ</Text>
         

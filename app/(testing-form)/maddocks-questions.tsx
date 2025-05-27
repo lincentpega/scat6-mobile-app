@@ -19,7 +19,7 @@ const QUESTIONS = [
 
 export default function MaddocksQuestions() {
   const { immediateAssessment, updateMaddocksQuestions, clearImmediateAssessment, setIsFormActive } = useFormContext();
-  const { athleteId } = useAthleteContext();
+  const { athleteId, athleteTmpFullName, setAthleteId, setAthleteTmpFullName } = useAthleteContext();
   const [answers, setAnswers] = useState<ImmediateAssessment.MaddocksQuestions>({
     event: false,
     period: false,
@@ -43,9 +43,12 @@ export default function MaddocksQuestions() {
   const handleSubmit = () => {
     updateMaddocksQuestions(answers);
     immediateAssessment.sportsmanId = athleteId ?? undefined;
+    immediateAssessment.athleteTmpFullName = athleteTmpFullName ?? undefined;
     saveImmediateAssessment(immediateAssessment);
     clearImmediateAssessment();
     setIsFormActive(false);
+    setAthleteId(null);
+    setAthleteTmpFullName(null);
     router.push("/(drafts)")
   };
 

@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, ReactNode, useMemo } from '
 
 interface AthleteContextType {
   athleteId: string | null;
+  athleteTmpFullName: string | null;
   setAthleteId: (id: string | null) => void;
+  setAthleteTmpFullName: (name: string | null) => void;
   clearAthleteId: () => void;
 }
 
@@ -22,9 +24,14 @@ interface AthleteProviderProps {
 
 export const AthleteProvider: React.FC<AthleteProviderProps> = ({ children }) => {
   const [athleteId, setAthleteId] = useState<string | null>(null);
+  const [athleteTmpFullName, setAthleteTmpFullName] = useState<string | null>(null);
 
   const updateAthleteId = (id: string | null) => {
     setAthleteId(id);
+  };
+
+  const updateAthleteTmpFullName = (name: string | null) => {
+    setAthleteTmpFullName(name);
   };
 
   const clearAthleteId = () => {
@@ -33,9 +40,11 @@ export const AthleteProvider: React.FC<AthleteProviderProps> = ({ children }) =>
 
   const value = useMemo(() => ({
     athleteId,
+    athleteTmpFullName,
     setAthleteId: updateAthleteId,
+    setAthleteTmpFullName: updateAthleteTmpFullName,
     clearAthleteId
-  }), [athleteId]);
+  }), [athleteId, athleteTmpFullName]);
 
   return (
     <AthleteContext.Provider value={value}>

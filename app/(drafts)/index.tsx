@@ -270,7 +270,7 @@ export default function TestingFormScreen() {
                     {item.sportsmanId ? (
                         <Text style={styles.athleteId}>ID спортсмена: {item.sportsmanId}</Text>
                     ) : (
-                        <Text style={styles.athleteId}>ID спортсмена: Не указан</Text>
+                        <Text style={styles.athleteId}>ФИО: {item.athleteTmpFullName || 'Не указано'}</Text>
                     )}
                     <View style={styles.draftBadge}>
                         <Text style={styles.draftBadgeText}>Черновик</Text>
@@ -336,16 +336,16 @@ export default function TestingFormScreen() {
 
             <Text style={styles.listTitle}>Базовые тестирования</Text>
             <FlatList
-                data={immediateDrafts}
-                keyExtractor={(item, idx) => `immediate-${item.id || idx}`}
+                data={medicalOfficeDrafts}
+                keyExtractor={(item, idx) => `medical-${item.id || idx}`}
                 renderItem={({ item, index }) => renderDraftCard(item, index)}
                 ListEmptyComponent={<Text style={{ color: 'gray', marginLeft: 8 }}>Нет драфтов</Text>}
                 contentContainerStyle={{ paddingBottom: 16 }}
             />
             <Text style={styles.listTitle}>Тестирования после травмы</Text>
             <FlatList
-                data={medicalOfficeDrafts}
-                keyExtractor={(item, idx) => `medical-${item.id || idx}`}
+                data={immediateDrafts}
+                keyExtractor={(item, idx) => `immediate-${item.id || idx}`}
                 renderItem={({ item, index }) => renderDraftCard(item, index)}
                 ListEmptyComponent={<Text style={{ color: 'gray', marginLeft: 8 }}>Нет драфтов</Text>}
                 contentContainerStyle={{ paddingBottom: 16 }}

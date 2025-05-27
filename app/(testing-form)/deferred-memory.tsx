@@ -22,7 +22,7 @@ export default function DeferredMemory() {
   const [selectedList, setSelectedList] = useState<ListKey>('A');
   const [answers, setAnswers] = useState<boolean[]>(Array(10).fill(false));
   const [currentStartTime, setCurrentStartTime] = useState('');
-  const { athleteId } = useAthleteContext();
+  const { athleteId, athleteTmpFullName, setAthleteId, setAthleteTmpFullName } = useAthleteContext();
 
 
   useEffect(() => {
@@ -63,9 +63,12 @@ export default function DeferredMemory() {
     };
     updateDeferredMemory(dataToSave);
     medicalOfficeAssessment.sportsmanId = athleteId ?? undefined;
+    medicalOfficeAssessment.athleteTmpFullName = athleteTmpFullName ?? undefined;
     saveMedicalOfficeAssessment(medicalOfficeAssessment);
     clearMedicalOfficeAssessment();
     setIsFormActive(false);
+    setAthleteId(null);
+    setAthleteTmpFullName(null);
     router.navigate('/(drafts)');
   };
 

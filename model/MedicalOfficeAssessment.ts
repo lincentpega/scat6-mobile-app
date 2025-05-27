@@ -1,6 +1,7 @@
 export interface MedicalOfficeAssessment {
   id?: string;
   sportsmanId: string;
+  athleteTmpFullName?: string;
   symptoms?: MedicalOfficeAssessment.Symptoms;
   orientationAssessment?: MedicalOfficeAssessment.OrientationAssessment;
   cognitiveFunctions?: MedicalOfficeAssessment.CognitiveFunctions;
