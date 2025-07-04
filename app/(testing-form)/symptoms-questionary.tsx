@@ -114,6 +114,8 @@ export default function SymptomsQuestionary() {
     worseAfterMentalActivity: false,
     wellnessPercent: 100,
     not100Reason: '',
+    score: 0,
+    presentSymptoms: 0,
   });
 
   useEffect(() => {
@@ -140,7 +142,24 @@ export default function SymptomsQuestionary() {
   };
 
   const handleSubmit = () => {
-    updateSymptoms(symptoms);
+    let calculatedPresentSymptoms = 0;
+    let calculatedScore = 0;
+
+    SYMPTOMS.forEach(symptom => {
+      const score = symptoms[symptom.id as keyof MedicalOfficeAssessment.Symptoms] as number;
+      if (score > 0) {
+        calculatedPresentSymptoms++;
+      }
+      calculatedScore += score;
+    });
+
+    const updatedSymptomsData = {
+      ...symptoms,
+      presentSymptoms: calculatedPresentSymptoms,
+      score: calculatedScore,
+    };
+
+    updateSymptoms(updatedSymptomsData);
     router.push('/(testing-form)/orientation-assessment');
   };
 

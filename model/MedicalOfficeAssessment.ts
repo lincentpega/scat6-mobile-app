@@ -8,8 +8,7 @@ export interface MedicalOfficeAssessment {
   shortTermMemory?: MedicalOfficeAssessment.ShortTermMemory;
   concentrationNumbers?: MedicalOfficeAssessment.ConcentrationNumbers;
   concentrationMonths?: MedicalOfficeAssessment.ConcentrationMonths;
-  mbessInfo?: MedicalOfficeAssessment.MbessInfo;
-  mbessTestResults?: MedicalOfficeAssessment.MbessTestResults;
+  mbessTest?: MedicalOfficeAssessment.MbessTest;
   tandemWalkIsolatedTask?: MedicalOfficeAssessment.TandemWalkIsolatedTask;
   tandemWalkDualTask?: MedicalOfficeAssessment.TandemWalkDualTask;
   tandemWalkResult?: MedicalOfficeAssessment.TandemWalkResult;
@@ -46,6 +45,8 @@ export namespace MedicalOfficeAssessment {
     worseAfterMentalActivity: boolean;
     wellnessPercent: number;
     not100Reason: string;
+    score: number;
+    presentSymptoms: number;
   }
 
   export interface OrientationAssessment {
@@ -67,10 +68,10 @@ export namespace MedicalOfficeAssessment {
 
   export interface ShortTermMemory {
     list: 'A' | 'B' | 'C';
-    trials: Array<{
-      trial: number; // 0, 1, or 2
-      score: number;
-    }>;
+    trial1Score: number;
+    trial2Score: number;
+    trial3Score: number;
+    totalScore?: number;
     testFinishTime: string; // ISO datetime string for when all trials were completed/submitted
   }
 
@@ -81,32 +82,23 @@ export namespace MedicalOfficeAssessment {
 
   export interface ConcentrationMonths {
     errors: number;
-    time: number; // seconds
     score: number;
   }
 
-  export interface MbessInfo {
+  export interface CognitiveTrial {
+    id: number;
+    errors: number;
+    time: number; // seconds
+  }
+
+  export interface MbessTest {
     legTested: 'right' | 'left' | '';
     surface: string;
     footwear: string;
-  }
-
-  export interface MbessTestResults {
-    casually: MbessTestResults.Casually;
-    styrofoam?: MbessTestResults.Styrofoam;
-  }
-
-  export namespace MbessTestResults {
-    export interface Casually {
-      standsOnBothFeet: number;
-      tandemPosition: number;
-      standsOnOneFeet: number;
-    }
-    export interface Styrofoam {
-      standsOnBothFeet: number;
-      tandemPosition: number;
-      standsOnOneFeet: number;
-    }
+    type: 'casual' | 'styrofoam';
+    standsOnBothFeet: number;
+    tandemPosition: number;
+    standsOnOneFeet: number;
   }
 
   export interface TandemWalkIsolatedTask {
@@ -122,11 +114,7 @@ export namespace MedicalOfficeAssessment {
     };
     cognitive: {
       startNumber: number;
-      trials: Array<{
-        id: number;
-        errors: number;
-        time: number;
-      }>;
+      trials: Array<CognitiveTrial>;
     };
   }
 

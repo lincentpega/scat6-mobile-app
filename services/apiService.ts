@@ -5,7 +5,7 @@ import { ImmediateAssessment } from '@/model/ImmediateAssessment';
 import { MedicalOfficeAssessment } from '@/model';
 
 // Base API URL - using the same IP as auth service
-const API_BASE_URL = process.env.API_BASE_URL ?? 'http://192.168.0.106:8080';
+const API_BASE_URL = process.env.API_BASE_URL ?? 'http://192.168.0.118:8080';
 
 /**
  * Generic API request function with authentication using axios

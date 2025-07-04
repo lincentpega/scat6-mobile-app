@@ -78,13 +78,6 @@ export default function TestingFormLayout() {
         }}
       />
       <Stack.Screen
-        name="coordination-and-balance-info"
-        options={{
-          title: "Координация и равновесие: вводная",
-          headerBackTitle: "Назад"
-        }}
-      />
-      <Stack.Screen
         name="coordination-and-balance-mbess"
         options={{
           title: "Координация и равновесие: mBESS",

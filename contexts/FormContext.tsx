@@ -20,8 +20,7 @@ interface FormContextData {
   updateShortTermMemory: (data: MedicalOfficeAssessment.ShortTermMemory) => void;
   updateConcentrationNumbers: (data: MedicalOfficeAssessment.ConcentrationNumbers) => void;
   updateConcentrationMonths: (data: MedicalOfficeAssessment.ConcentrationMonths) => void;
-  updateMbessInfo: (data: MedicalOfficeAssessment.MbessInfo) => void;
-  updateMbessTestResults: (data: MedicalOfficeAssessment.MbessTestResults) => void;
+  updateMbessTest: (data: MedicalOfficeAssessment.MbessTest) => void;
   updateTandemWalkIsolatedTask: (data: MedicalOfficeAssessment.TandemWalkIsolatedTask) => void;
   updateTandemWalkDualTask: (data: MedicalOfficeAssessment.TandemWalkDualTask) => void;
   updateTandemWalkResult: (data: MedicalOfficeAssessment.TandemWalkResult) => void;
@@ -112,7 +111,12 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
   const updateShortTermMemory = (data: MedicalOfficeAssessment.ShortTermMemory) => {
     setMedicalOfficeAssessment(prev => {
       const updated = { ...prev, shortTermMemory: data };
-      console.log('updateShortTermMemory, medicalOfficeAssessment:', updated.shortTermMemory.trials[0], updated.shortTermMemory.trials[1], updated.shortTermMemory.trials[2]);
+      console.log(
+        'updateShortTermMemory, medicalOfficeAssessment scores:',
+        updated.shortTermMemory?.trial1Score,
+        updated.shortTermMemory?.trial2Score,
+        updated.shortTermMemory?.trial3Score
+      );
       return updated;
     });
   };
@@ -130,17 +134,10 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
       return updated;
     });
   };
-  const updateMbessInfo = (data: MedicalOfficeAssessment.MbessInfo) => {
+  const updateMbessTest = (data: MedicalOfficeAssessment.MbessTest) => {
     setMedicalOfficeAssessment(prev => {
-      const updated = { ...prev, mbessInfo: data };
-      console.log('updateMbessInfo, medicalOfficeAssessment:', updated);
-      return updated;
-    });
-  };
-  const updateMbessTestResults = (data: MedicalOfficeAssessment.MbessTestResults) => {
-    setMedicalOfficeAssessment(prev => {
-      const updated = { ...prev, mbessTestResults: data };
-      console.log('updateMbessTestResults, medicalOfficeAssessment:', updated);
+      const updated = { ...prev, mbessTest: data };
+      console.log('updateMbessTest, medicalOfficeAssessment:', updated);
       return updated;
     });
   };
@@ -196,8 +193,7 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
     updateShortTermMemory,
     updateConcentrationNumbers,
     updateConcentrationMonths,
-    updateMbessInfo,
-    updateMbessTestResults,
+    updateMbessTest,
     updateTandemWalkIsolatedTask,
     updateTandemWalkDualTask,
     updateTandemWalkResult,

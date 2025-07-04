@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
-import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import { useFormContext } from '@/contexts/FormContext';
 import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 
+// DIGIT_LISTS[listKey][rowIndex][attemptIndex]
 const DIGIT_LISTS = {
     A: [
-        ['4-9-3', '6-2-9'],
-        ['3-8-1-4', '3-2-7-9'],
-        ['6-2-9-7-1', '1-5-2-8-6'],
-        ['7-1-8-4-6-2', '5-3-9-1-4-8'],
+        ['4-9-3', '6-2-9'], // Row 0 (3 digits)
+        ['3-8-1-4', '3-2-7-9'], // Row 1 (4 digits)
+        ['6-2-9-7-1', '1-5-2-8-6'], // Row 2 (5 digits)
+        ['7-1-8-4-6-2', '5-3-9-1-4-8'], // Row 3 (6 digits)
     ],
     B: [
         ['5-2-6', '4-1-5'],
@@ -29,153 +29,263 @@ const DIGIT_LISTS = {
     ],
 };
 
+type ListKey = keyof typeof DIGIT_LISTS;
+type Step = 'instruction' | 'testing';
+
 export default function ConcentrationNumbers() {
-    const { medicalOfficeAssessment, updateConcentrationNumbers } = useFormContext();
-    const [selectedList, setSelectedList] = useState<'A' | 'B' | 'V'>('A');
-    // answers[trialIdx][rowIdx] = true/false
-    const [answers, setAnswers] = useState(
-        Array(4).fill(0).map(() => [false])
-    );
+    const { updateConcentrationNumbers } = useFormContext();
+
+    const [currentStep, setCurrentStep] = useState<Step>('instruction');
+    const [selectedList, setSelectedList] = useState<ListKey>('A');
+    
+    const [activeRow, setActiveRow] = useState(0); // Index for the current difficulty level/row
+    const [attemptNumber, setAttemptNumber] = useState(0); // 0 for 1st string in pair, 1 for 2nd
+    const [score, setScore] = useState(0);
+    const [isTestComplete, setIsTestComplete] = useState(false);
+
+    const resetTestState = () => {
+        setActiveRow(0);
+        setAttemptNumber(0);
+        setScore(0);
+        setIsTestComplete(false);
+    };
+
+    // Reset test progress if list changes during testing phase (though UI primarily changes list on instruction screen)
+    useEffect(() => {
+        resetTestState();
+    }, [selectedList]);
 
     const handleListChange = (itemValue: string | number) => {
-        const v = String(itemValue) as 'A' | 'B' | 'V';
-        setSelectedList(v);
-        setAnswers(Array(4).fill(0).map(() => [false]));
+        const newList = String(itemValue) as ListKey;
+        setSelectedList(newList);
+        // useEffect will call resetTestState
     };
 
-    const handleCheck = (trialIdx: number) => {
-        setAnswers(prev => {
-            const updated = prev.map(arr => [...arr]);
-            updated[trialIdx][0] = !updated[trialIdx][0];
-            return updated;
-        });
+    const proceedToTesting = () => {
+        resetTestState(); // Ensure fresh start when moving from instructions
+        setCurrentStep('testing');
     };
 
-    const score = answers.filter(arr => arr[0]).length;
+    const handleAttempt = (wasSuccessful: boolean) => {
+        if (isTestComplete) return;
+
+        let nextActiveRow = activeRow;
+        let nextAttemptNumber = attemptNumber;
+        let newScore = score;
+
+        if (wasSuccessful) {
+            newScore++;
+            nextActiveRow++;
+            nextAttemptNumber = 0;
+        } else {
+            if (attemptNumber === 0) { // Failed first attempt of the pair
+                nextAttemptNumber = 1;
+                // Stay on the same activeRow
+            } else { // Failed second attempt of the pair
+                nextActiveRow++;
+                nextAttemptNumber = 0;
+                // Score not incremented for this row
+            }
+        }
+        
+        setScore(newScore);
+        setActiveRow(nextActiveRow);
+        setAttemptNumber(nextAttemptNumber);
+
+        if (nextActiveRow >= DIGIT_LISTS[selectedList].length) {
+            setIsTestComplete(true);
+        }
+    };
 
     const handleSubmit = () => {
-        // Сохраняем только название листа и score
-        const newEntry: MedicalOfficeAssessment.ConcentrationNumbers = {
+        const dataToSave: MedicalOfficeAssessment.ConcentrationNumbers = {
             numberList: selectedList,
-            score,
+            score: score, 
         };
-        updateConcentrationNumbers(newEntry);
+        updateConcentrationNumbers(dataToSave);
         router.push('/(testing-form)/concentration-months');
     };
 
-    return (
-        <ScrollViewKeyboardAwareContainer contentContainerStyle={{ alignItems: 'flex-start' }}>
-            <View style={styles.container}>
-                <Text style={styles.instructions}>
-                    <Text style={{ fontWeight: 'bold' }}>Повторение цифр в обратном порядке</Text>{'\n'}
-                    Скорость тестирования составляет одна цифра в секунду. Читайте список комбинаций цифр из выбранной колонки сверху вниз. Если строка произнесена правильно, переходите к строке со следующим большим количеством цифр; если строка произнесена неправильно, используйте альтернативную строку с таким же количеством цифр; если это снова не удалось, завершите тест.{'\n'}
-                    <Text style={{ fontStyle: 'italic' }}>
-                        Скажите: "Я собираюсь прочитать последовательность чисел, и когда я закончу, вы повторите их мне в порядке, обратном тому, как я прочитал их вам. Например, если я скажу 7-1-9, вы скажете 9-1-7. Итак, если бы я сказал 9-6-8, вы бы ответили? (8-6-9)"
-                    </Text>
+    const handleResetConfirmation = () => {
+        Alert.alert(
+            "Сбросить тест?",
+            "Вы уверены, что хотите сбросить текущий прогресс и начать заново с выбора списка?",
+            [
+                { text: "Отмена", style: "cancel" },
+                {
+                    text: "Сбросить",
+                    onPress: () => {
+                        resetTestState();
+                        setCurrentStep('instruction');
+                    },
+                    style: "destructive",
+                },
+            ]
+        );
+    };
+
+    const renderInstructionStep = () => (
+        <View style={styles.stepContainer}>
+            <Text style={styles.header}>Повторение цифр в обратном порядке</Text>
+            <Text style={styles.instructionText}>
+                Выберите список цифр для тестирования. Скорость тестирования составляет одну цифру в секунду. Читайте цепочки цифр из выбранного списка сверху вниз.
+            </Text>
+            <View style={styles.pickerContainer}>
+                <Text style={styles.pickerLabel}>Список цифр:</Text>
+                <Picker
+                    selectedValue={selectedList}
+                    onValueChange={handleListChange}
+                    style={styles.picker}
+                    itemStyle={styles.pickerItem}
+                >
+                    <Picker.Item label="A" value="A" />
+                    <Picker.Item label="B" value="B" />
+                    <Picker.Item label="C" value="V" />
+                </Picker>
+            </View>
+            <SubmitButton text="Начать тестирование" onPress={proceedToTesting} style={styles.actionButton} />
+        </View>
+    );
+
+    const renderTestingStep = () => {
+        const currentDigits = !isTestComplete ? DIGIT_LISTS[selectedList][activeRow][attemptNumber] : "Тест завершен";
+
+        return (
+            <View style={styles.stepContainer}>
+                <Text style={[styles.instructionText, styles.italicInstruction]}>
+                    Скажите: "Я собираюсь прочитать последовательность чисел, и когда я закончу, вы повторите их мне в порядке, обратном тому, как я прочитал их вам. Например, если я скажу 7-1-9, вы скажете 9-1-7. Итак, если бы я сказал 9-6-8, вы бы ответили? (8-6-9)"
                 </Text>
-                <View style={styles.pickerRow}>
-                    <Text style={styles.pickerLabel}>Выберите список цифр</Text>
-                    <Picker
-                        selectedValue={selectedList}
-                        onValueChange={handleListChange}
-                        style={{ width: 100 }}
-                    >
-                        <Picker.Item label="A" value="A" />
-                        <Picker.Item label="Б" value="B" />
-                        <Picker.Item label="В" value="V" />
-                    </Picker>
-                </View>
-                <View style={styles.tableHeader}>
-                    <Text style={[styles.cell, styles.headerCell]}>Список {selectedList}</Text>
-                </View>
-                {DIGIT_LISTS[selectedList].map((row, trialIdx) => (
-                    <View key={trialIdx} style={styles.tableRow}>
-                        <View style={[styles.cell, { flex: 2 }]}>
-                            <Text>{row[0]}</Text>
-                            <Text>{row[1]}</Text>
-                        </View>
-                        <View style={styles.checkCell}>
-                            <BouncyCheckbox
-                                isChecked={answers[trialIdx][0]}
-                                onPress={() => handleCheck(trialIdx)}
-                                fillColor="#000"
-                                unFillColor="#000"
-                                iconStyle={{ borderColor: '#000', borderWidth: 2 }}
-                                innerIconStyle={{ borderWidth: 2 }}
-                                style={{ marginBottom: 0, alignSelf: 'flex-end' }}
-                                size={28}
-                                disableText
-                            />
+                
+                {!isTestComplete ? (
+                    <View style={styles.testingContent}>
+                        <Text style={styles.digitStringDisplay}>{currentDigits}</Text>
+                        <View style={styles.attemptButtonsContainer}>
+                            <SubmitButton text="Успех" onPress={() => handleAttempt(true)} style={[styles.attemptButton, styles.successButton]} />
+                            <SubmitButton text="Провал" onPress={() => handleAttempt(false)} style={[styles.attemptButton, styles.failButton]} />
                         </View>
                     </View>
-                ))}
-                <Text style={styles.resultText}>Результат: <Text style={{ fontWeight: 'bold' }}>{score}</Text> из 4</Text>
-                <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 24 }} />
+                ) : (
+                    <Text style={styles.finalScoreText}>Тест завершен. Результат: {score} из {DIGIT_LISTS[selectedList].length}</Text>
+                )}
+
+                <View style={styles.footerButtonsContainer}>
+                    {isTestComplete && (
+                        <SubmitButton text="Завершить тест" onPress={handleSubmit} style={styles.mainButton} />
+                    )}
+                    <SubmitButton text="Сбросить тест" onPress={handleResetConfirmation} style={[styles.mainButton, styles.resetButton]} />
+                </View>
             </View>
+        );
+    }
+
+    return (
+        <ScrollViewKeyboardAwareContainer contentContainerStyle={styles.scrollContainer}>
+            {currentStep === 'instruction' && renderInstructionStep()}
+            {currentStep === 'testing' && renderTestingStep()}
         </ScrollViewKeyboardAwareContainer>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    scrollContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        paddingVertical: 20,
+        paddingHorizontal: 16,
+    },
+    stepContainer: {
         width: '100%',
         alignItems: 'center',
-        paddingHorizontal: 16,
     },
     header: {
         fontSize: 20,
         fontWeight: 'bold',
-        marginBottom: 10,
-        alignSelf: 'flex-start',
+        marginBottom: 16,
+        textAlign: 'center',
     },
-    instructions: {
-        fontSize: 14,
-        marginBottom: 18,
+    instructionText: {
+        fontSize: 15,
+        marginBottom: 20,
         color: '#333',
-        alignSelf: 'flex-start',
+        textAlign: 'center',
+        lineHeight: 22,
     },
-    pickerRow: {
+    italicInstruction: {
+        fontStyle: 'italic',
+        marginBottom: 24,
+        paddingHorizontal: 10, // Ensure it doesn't touch edges
+    },
+    pickerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        justifyContent: 'center',
+        marginBottom: 30,
         width: '100%',
     },
     pickerLabel: {
         fontSize: 16,
-        marginRight: 8,
+        marginRight: 10,
     },
-    tableHeader: {
-        flexDirection: 'row',
-        width: '100%',
-        borderBottomWidth: 1,
-        borderColor: '#ccc',
-        marginBottom: 4,
+    picker: {
+        width: 150,
+        height: Platform.OS === 'android' ? 50 : undefined,
     },
-    headerCell: {
-        fontWeight: 'bold',
-        fontSize: 15,
+    pickerItem: {
+        height: Platform.OS === 'ios' ? 120 : undefined,
     },
-    cell: {
-        flex: 1,
-        padding: 6,
-        fontSize: 15,
-    },
-    tableRow: {
-        flexDirection: 'row',
+    testingContent: {
         alignItems: 'center',
+        marginBottom: 24,
         width: '100%',
-        borderBottomWidth: 1,
-        borderColor: '#eee',
-        minHeight: 44,
     },
-    checkCell: {
-        flex: 1,
+    digitStringDisplay: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        marginBottom: 24,
+        padding: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 5,
+        minWidth: 150,
+        textAlign: 'center',
+        backgroundColor: '#f9f9f9',
+    },
+    attemptButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+    },
+    attemptButton: {
+        flex: 1, // Make buttons take equal space
+        marginHorizontal: 8, // Add some space between buttons
+    },
+    successButton: {
+        backgroundColor: '#4CAF50', // Green
+    },
+    failButton: {
+        backgroundColor: '#F44336', // Red
+    },
+    finalScoreText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        textAlign: 'center',
+        marginVertical: 30,
+    },
+    footerButtonsContainer: {
+        marginTop: 20,
+        width: '80%',
         alignItems: 'center',
     },
-    resultText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginTop: 16,
-        alignSelf: 'flex-start',
+    mainButton: {
+        width: '100%',
+        marginBottom: 12,
+    },
+    resetButton: {
+        backgroundColor: '#E57373', // Softer red
+    },
+    actionButton: {
+        marginTop: 20,
+        width: '80%',
     },
 }); 

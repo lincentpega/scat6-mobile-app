@@ -1,7 +1,7 @@
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import TextInputField from '@/components/TextInputField';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Platform, StyleSheet, View, Text } from 'react-native';
+import { Platform, StyleSheet, View, Text, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import LabeledPicker from '@/components/LabeledPicker';
 import SubmitButton from '@/components/SubmitButton';
@@ -101,10 +101,12 @@ export default function AthleteInfo() {
       setAthlete(savedAthlete);
       
       // Show success feedback (you can add a toast/alert here if needed)
+      Alert.alert("Успех", "Данные спортсмена успешно сохранены");
       console.log("Athlete data saved successfully");
     } catch (e) {
       console.error("Failed to save athlete data", e);
       // Show error feedback (you can add a toast/alert here if needed)
+      Alert.alert("Ошибка", "Не удалось сохранить данные спортсмена. Пожалуйста, попробуйте еще раз.");
     }
   }
 
