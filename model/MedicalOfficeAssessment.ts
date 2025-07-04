@@ -1,3 +1,5 @@
+import { WordListKey } from '../constants/app-types';
+
 export interface MedicalOfficeAssessment {
   id?: string;
   sportsmanId: string;
@@ -67,12 +69,12 @@ export namespace MedicalOfficeAssessment {
   }
 
   export interface ShortTermMemory {
-    list: 'A' | 'B' | 'C';
+    list: WordListKey;
     trial1Score: number;
     trial2Score: number;
     trial3Score: number;
     totalScore?: number;
-    testFinishTime: string; // ISO datetime string for when all trials were completed/submitted
+    testFinishTime: Date;
   }
 
   export interface ConcentrationNumbers {
@@ -124,8 +126,8 @@ export namespace MedicalOfficeAssessment {
   }
 
   export interface DeferredMemory {
-    startTime: string;
-    list: 'A' | 'B' | 'C';
+    startTime: Date;
+    list: WordListKey;
     result: number;
   }
 } 

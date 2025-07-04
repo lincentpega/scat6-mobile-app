@@ -1,0 +1,1 @@
+export type WordListKey = 'A' | 'B' | 'C'; 

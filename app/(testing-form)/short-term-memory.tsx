@@ -8,6 +8,7 @@ import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import { useFormContext } from '@/contexts/FormContext';
 import type { MedicalOfficeAssessment as FullMedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
+import { WordListKey } from '@/constants/app-types';
 
 const WORD_LISTS = {
   A: [
@@ -28,45 +29,51 @@ const NUMBER_OF_TRIALS = 3;
 
 type Step = 'instruction' | 'trial1' | 'trial2' | 'trial3';
 
+type TrialAnswers = {
+  trial1: boolean[];
+  trial2: boolean[];
+  trial3: boolean[];
+};
+
 export default function ShortTermMemory() {
   const { updateShortTermMemory } = useFormContext();
   
-  const [selectedListKey, setSelectedListKey] = useState<'A' | 'B' | 'C'>('A');
+  const createEmptyTrialAnswers = (): TrialAnswers => ({
+    trial1: Array(WORD_LISTS[selectedListKey].length).fill(false),
+    trial2: Array(WORD_LISTS[selectedListKey].length).fill(false),
+    trial3: Array(WORD_LISTS[selectedListKey].length).fill(false),
+  });
+  
+  const [selectedListKey, setSelectedListKey] = useState<WordListKey>('A');
   const [currentStep, setCurrentStep] = useState<Step>('instruction');
   
-  const [trialAnswers, setTrialAnswers] = useState<boolean[][]>(() =>
-    Array(NUMBER_OF_TRIALS)
-      .fill(null)
-      .map(() => Array(WORD_LISTS[selectedListKey].length).fill(false))
-  );
+  const [trialAnswers, setTrialAnswers] = useState<TrialAnswers>(createEmptyTrialAnswers);
 
   useEffect(() => {
-    // Reset answers when the selected list changes
-    setTrialAnswers(
-      Array(NUMBER_OF_TRIALS)
-        .fill(null)
-        .map(() => Array(WORD_LISTS[selectedListKey].length).fill(false))
-    );
+    // Reset answers when the selected list changes, but only if we're still on instruction step
+    if (currentStep === 'instruction') {
+      setTrialAnswers(createEmptyTrialAnswers());
+    }
   }, [selectedListKey]);
 
   const handleListChange = (itemValue: string | number) => {
-    const newListKey = String(itemValue) as 'A' | 'B' | 'C';
+    const newListKey = String(itemValue) as WordListKey;
     setSelectedListKey(newListKey);
   };
 
-  const handleCheckboxChange = (trialIndex: number, wordIdx: number) => {
-    setTrialAnswers(prev => {
-      const updated = prev.map((arr, i) => (i === trialIndex ? [...arr] : arr));
-      updated[trialIndex][wordIdx] = !updated[trialIndex][wordIdx];
-      return updated;
-    });
+  const handleCheckboxChange = (trial: keyof TrialAnswers, wordIdx: number) => {
+    setTrialAnswers(prev => ({
+      ...prev,
+      [trial]: prev[trial].map((answer, idx) => 
+        idx === wordIdx ? !answer : answer
+      ),
+    }));
   };
 
   const handleSubmit = () => {
-    const scores = trialAnswers.map(answers => answers.filter(Boolean).length);
-    const trial1Score = scores[0] ?? 0;
-    const trial2Score = scores[1] ?? 0;
-    const trial3Score = scores[2] ?? 0;
+    const trial1Score = trialAnswers.trial1.filter(answer => answer === true).length;
+    const trial2Score = trialAnswers.trial2.filter(answer => answer === true).length;
+    const trial3Score = trialAnswers.trial3.filter(answer => answer === true).length;
     const totalScore = trial1Score + trial2Score + trial3Score;
 
     const dataToSave: FullMedicalOfficeAssessment.ShortTermMemory = {
@@ -75,7 +82,7 @@ export default function ShortTermMemory() {
       trial2Score,
       trial3Score,
       totalScore,
-      testFinishTime: new Date().toISOString(),
+      testFinishTime: new Date(),
     };
     updateShortTermMemory(dataToSave);
     router.push('/(testing-form)/concentration-numbers');
@@ -99,11 +106,7 @@ export default function ShortTermMemory() {
         {
           text: "Сбросить",
           onPress: () => {
-            setTrialAnswers(
-              Array(NUMBER_OF_TRIALS)
-                .fill(null)
-                .map(() => Array(WORD_LISTS[selectedListKey].length).fill(false))
-            );
+            setTrialAnswers(createEmptyTrialAnswers());
             setCurrentStep('instruction');
           },
           style: "destructive"
@@ -112,9 +115,16 @@ export default function ShortTermMemory() {
     );
   };
 
-  const getPickerLabel = (listKey: 'A' | 'B' | 'C') => {
+  const getPickerLabel = (listKey: WordListKey) => {
     const firstWord = WORD_LISTS[listKey][0];
     return `${listKey} (${firstWord}...)`;
+  };
+
+  const getTrialKey = (trialIndex: number): keyof TrialAnswers => {
+    if (trialIndex === 0) return 'trial1';
+    if (trialIndex === 1) return 'trial2';
+    if (trialIndex === 2) return 'trial3';
+    throw new Error(`Invalid trial index: ${trialIndex}`);
   };
 
   const renderInstructionStep = () => (
@@ -140,6 +150,7 @@ export default function ShortTermMemory() {
 
   const renderTrialStep = (trialIndex: number) => {
     const isLastTrial = trialIndex === NUMBER_OF_TRIALS - 1;
+    const trialKey = getTrialKey(trialIndex);
     let instructionText = null;
 
     if (trialIndex === 0) {
@@ -165,8 +176,8 @@ export default function ShortTermMemory() {
             <CheckboxField
               key={`${selectedListKey}-${trialIndex}-${word}`}
               label={word}
-              checked={trialAnswers[trialIndex]?.[wordIdx] ?? false}
-              onChange={() => handleCheckboxChange(trialIndex, wordIdx)}
+              checked={trialAnswers[trialKey][wordIdx] ?? false}
+              onChange={() => handleCheckboxChange(trialKey, wordIdx)}
               style={styles.checkboxRow}
             />
           ))}
