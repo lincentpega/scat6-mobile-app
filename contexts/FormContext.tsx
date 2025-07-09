@@ -11,12 +11,13 @@ interface FormContextData {
   updateCoordinationEyeMovement: (data: ImmediateAssessment.CoordinationEyeMovement) => void;
   updateMaddocksQuestions: (data: ImmediateAssessment.MaddocksQuestions) => void;
   clearImmediateAssessment: () => void;
+  getFullImmediateAssessment: (assessment: Partial<ImmediateAssessment>) => ImmediateAssessment;
 
   // MedicalOfficeAssessment
   medicalOfficeAssessment: Partial<MedicalOfficeAssessment>;
   updateSymptoms: (data: MedicalOfficeAssessment.Symptoms) => void;
+  updateSymptomsDetails: (data: MedicalOfficeAssessment.SymptomsDetails) => void;
   updateOrientationAssessment: (data: MedicalOfficeAssessment.OrientationAssessment) => void;
-  updateCognitiveFunctions: (data: MedicalOfficeAssessment.CognitiveFunctions) => void;
   updateShortTermMemory: (data: MedicalOfficeAssessment.ShortTermMemory) => void;
   updateConcentrationNumbers: (data: MedicalOfficeAssessment.ConcentrationNumbers) => void;
   updateConcentrationMonths: (data: MedicalOfficeAssessment.ConcentrationMonths) => void;
@@ -26,6 +27,7 @@ interface FormContextData {
   updateTandemWalkResult: (data: MedicalOfficeAssessment.TandemWalkResult) => void;
   updateDeferredMemory: (data: MedicalOfficeAssessment.DeferredMemory) => void;
   clearMedicalOfficeAssessment: () => void;
+  getFullMedicalOfficeAssessment: (assessment: Partial<MedicalOfficeAssessment>) => MedicalOfficeAssessment;
 
   // Form active state
   isFormActive: boolean;
@@ -94,17 +96,17 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
       return updated;
     });
   };
+  const updateSymptomsDetails = (data: MedicalOfficeAssessment.SymptomsDetails) => {
+    setMedicalOfficeAssessment(prev => {
+      const updated = { ...prev, symptomsDetails: data };
+      console.log('updateSymptomsDetails, medicalOfficeAssessment:', updated);
+      return updated;
+    });
+  };
   const updateOrientationAssessment = (data: MedicalOfficeAssessment.OrientationAssessment) => {
     setMedicalOfficeAssessment(prev => {
       const updated = { ...prev, orientationAssessment: data };
       console.log('updateOrientationAssessment, medicalOfficeAssessment:', updated);
-      return updated;
-    });
-  };
-  const updateCognitiveFunctions = (data: MedicalOfficeAssessment.CognitiveFunctions) => {
-    setMedicalOfficeAssessment(prev => {
-      const updated = { ...prev, cognitiveFunctions: data };
-      console.log('updateCognitiveFunctions, medicalOfficeAssessment:', updated);
       return updated;
     });
   };
@@ -171,6 +173,67 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
   };
   const clearMedicalOfficeAssessment = () => setMedicalOfficeAssessment({});
 
+  const getFullImmediateAssessment = (assessment: Partial<ImmediateAssessment>): ImmediateAssessment => {
+    const partial = assessment;
+    console.log('partial immediate assessment:', partial);
+
+    // Assert required fields (as per ImmediateAssessment.ts)
+    if (!partial.sportsmanId) throw new Error('sportsmanId is required');
+    if (!partial.startDate) throw new Error('startDate is required');
+    if (!partial.endDate) throw new Error('endDate is required');
+    if (!partial.observableSigns) throw new Error('observableSigns is required');
+    if (!partial.neckSpineAssessment) throw new Error('neckSpineAssessment is required');
+    if (!partial.glasgowScale) throw new Error('glasgowScale is required');
+    if (!partial.coordinationEyeMovement) throw new Error('coordinationEyeMovement is required');
+    if (!partial.maddocksQuestions) throw new Error('maddocksQuestions is required');
+
+    return {
+      id: partial.id,
+      sportsmanId: partial.sportsmanId,
+      athleteTmpFullName: partial.athleteTmpFullName,
+      startDate: partial.startDate,
+      endDate: partial.endDate,
+      observableSigns: partial.observableSigns,
+      neckSpineAssessment: partial.neckSpineAssessment,
+      glasgowScale: partial.glasgowScale,
+      coordinationEyeMovement: partial.coordinationEyeMovement,
+      maddocksQuestions: partial.maddocksQuestions,
+    };
+  };
+
+  const getFullMedicalOfficeAssessment = (assessment: Partial<MedicalOfficeAssessment>): MedicalOfficeAssessment => {
+    const partial = assessment;
+    console.log('partial medical office assessment:', partial);
+
+    // Assert required fields (as per MedicalOfficeAssessment.ts)
+    if (!partial.sportsmanId) throw new Error('sportsmanId is required');
+    if (!partial.symptoms) throw new Error('symptoms is required');
+    if (!partial.symptomsDetails) throw new Error('symptomsDetails is required');
+    if (!partial.orientationAssessment) throw new Error('orientationAssessment is required');
+    if (!partial.shortTermMemory) throw new Error('shortTermMemory is required');
+    if (!partial.concentrationNumbers) throw new Error('concentrationNumbers is required');
+    if (!partial.concentrationMonths) throw new Error('concentrationMonths is required');
+    if (!partial.mbessTest) throw new Error('mbessTest is required');
+    if (!partial.deferredMemory) throw new Error('deferredMemory is required');
+
+    return {
+      sportsmanId: partial.sportsmanId,
+      id: partial.id,
+      athleteTmpFullName: partial.athleteTmpFullName,
+      symptoms: partial.symptoms,
+      symptomsDetails: partial.symptomsDetails,
+      orientationAssessment: partial.orientationAssessment,
+      shortTermMemory: partial.shortTermMemory,
+      concentrationNumbers: partial.concentrationNumbers,
+      concentrationMonths: partial.concentrationMonths,
+      mbessTest: partial.mbessTest,
+      tandemWalkIsolatedTask: partial.tandemWalkIsolatedTask,
+      tandemWalkDualTask: partial.tandemWalkDualTask,
+      tandemWalkResult: partial.tandemWalkResult,
+      deferredMemory: partial.deferredMemory,
+    };
+  };
+
   // Reset both forms and set isFormActive to false
   const resetForm = () => {
     clearImmediateAssessment();
@@ -186,10 +249,11 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
     updateCoordinationEyeMovement,
     updateMaddocksQuestions,
     clearImmediateAssessment,
+    getFullImmediateAssessment,
     medicalOfficeAssessment,
     updateSymptoms,
+    updateSymptomsDetails,
     updateOrientationAssessment,
-    updateCognitiveFunctions,
     updateShortTermMemory,
     updateConcentrationNumbers,
     updateConcentrationMonths,
@@ -199,6 +263,7 @@ export function FormProvider({ children }: Readonly<{ children: ReactNode }>) {
     updateTandemWalkResult,
     updateDeferredMemory,
     clearMedicalOfficeAssessment,
+    getFullMedicalOfficeAssessment,
     isFormActive,
     setIsFormActive,
     resetForm,

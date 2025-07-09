@@ -4,19 +4,17 @@ export interface MedicalOfficeAssessment {
   id?: string;
   sportsmanId: string;
   athleteTmpFullName?: string;
-  symptoms?: MedicalOfficeAssessment.Symptoms;
-  orientationAssessment?: MedicalOfficeAssessment.OrientationAssessment;
-  cognitiveFunctions?: MedicalOfficeAssessment.CognitiveFunctions;
-  shortTermMemory?: MedicalOfficeAssessment.ShortTermMemory;
-  concentrationNumbers?: MedicalOfficeAssessment.ConcentrationNumbers;
-  concentrationMonths?: MedicalOfficeAssessment.ConcentrationMonths;
-  mbessTest?: MedicalOfficeAssessment.MbessTest;
+  symptoms: MedicalOfficeAssessment.Symptoms;
+  symptomsDetails: MedicalOfficeAssessment.SymptomsDetails;
+  orientationAssessment: MedicalOfficeAssessment.OrientationAssessment;
+  shortTermMemory: MedicalOfficeAssessment.ShortTermMemory;
+  concentrationNumbers: MedicalOfficeAssessment.ConcentrationNumbers;
+  concentrationMonths: MedicalOfficeAssessment.ConcentrationMonths;
+  mbessTest: MedicalOfficeAssessment.MbessTest;
   tandemWalkIsolatedTask?: MedicalOfficeAssessment.TandemWalkIsolatedTask;
   tandemWalkDualTask?: MedicalOfficeAssessment.TandemWalkDualTask;
   tandemWalkResult?: MedicalOfficeAssessment.TandemWalkResult;
-  deferredMemory?: MedicalOfficeAssessment.DeferredMemory;
-  wasKnownBefore?: boolean;
-  differsFromKnownBefore?: boolean;
+  deferredMemory: MedicalOfficeAssessment.DeferredMemory;
 }
 
 export namespace MedicalOfficeAssessment {
@@ -43,12 +41,13 @@ export namespace MedicalOfficeAssessment {
     depression: number;
     anxiety: number;
     sleepIssues: number;
+  }
+
+  export interface SymptomsDetails {
     worseAfterPhysicalActivity: boolean;
     worseAfterMentalActivity: boolean;
     wellnessPercent: number;
-    not100Reason: string;
-    score: number;
-    presentSymptoms: number;
+    not100Reason?: string;
   }
 
   export interface OrientationAssessment {
@@ -57,15 +56,6 @@ export namespace MedicalOfficeAssessment {
     weekday: boolean;
     year: boolean;
     time: boolean;
-    score: number;
-  }
-
-  export interface CognitiveFunctions {
-    month: number;
-    date: number;
-    weekday: number;
-    year: number;
-    time: number;
   }
 
   export interface ShortTermMemory {
@@ -73,7 +63,6 @@ export namespace MedicalOfficeAssessment {
     trial1Score: number;
     trial2Score: number;
     trial3Score: number;
-    totalScore?: number;
     testFinishTime: Date;
   }
 
@@ -83,8 +72,7 @@ export namespace MedicalOfficeAssessment {
   }
 
   export interface ConcentrationMonths {
-    errors: number;
-    score: number;
+    success: boolean;
   }
 
   export interface CognitiveTrial {
@@ -105,19 +93,11 @@ export namespace MedicalOfficeAssessment {
 
   export interface TandemWalkIsolatedTask {
     trials: number[];
-    avgResult: number;
-    bestResult: number;
   }
 
   export interface TandemWalkDualTask {
-    practice: {
-      errors: number;
-      time: number;
-    };
-    cognitive: {
-      startNumber: number;
-      trials: Array<CognitiveTrial>;
-    };
+    startNumber: number;
+    trials: Array<CognitiveTrial>;
   }
 
   export interface TandemWalkResult {

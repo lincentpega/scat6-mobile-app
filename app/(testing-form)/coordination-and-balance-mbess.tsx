@@ -151,9 +151,19 @@ export default function CoordinationAndBalanceTestScreen() {
     updateMbessTest(mbessTestToSave);
   };
 
-  const handleFinalSubmit = () => {
+  const handleGoToTandemWalk = () => {
     saveCurrentTestResults();
     router.push('/(testing-form)/tandem-walk');
+  };
+
+  const handleGoToTandemWalkDual = () => {
+    saveCurrentTestResults();
+    router.push('/(testing-form)/tandem-walk-dual');
+  };
+
+  const handleSkipTandemWalk = () => {
+    saveCurrentTestResults();
+    router.push('/(testing-form)/deferred-memory');
   };
 
   const totalErrors = doubleLegErrors + tandemErrors + singleLegErrors;
@@ -325,19 +335,28 @@ export default function CoordinationAndBalanceTestScreen() {
       <View style={styles.notesBlock}>
         <Text style={styles.note}><Text style={{ fontWeight: 'bold' }}>Примечание:</Text> Если mBESS дает нормальные результаты, переходите к <Text style={{ fontWeight: 'bold' }}>тандемной походке/тандемной походке с двойным заданием</Text>.</Text>
         <Text style={styles.note}>Если mBESS выявляет аномальные результаты или клинически значимые трудности, в <Text style={{ fontWeight: 'bold' }}>тандемной походке</Text> на данный момент нет необходимости.</Text>
-        <Text style={styles.note}>Как <Text style={{ fontWeight: 'bold' }}>тандемная походка</Text>, так и дополнительный компонент <Text style={{ fontWeight: 'bold' }}>двойной задачи</Text> могут быть применены позже по мере необходимости.</Text>
       </View>
 
       <View style={styles.resultsButtonContainer}>
-        <SubmitButton 
-          text="Сбросить тест" 
-          onPress={handleResetAllMbessTests} 
-          style={[styles.resultActionItem, styles.resetButton]}
+        <SubmitButton
+          text="Перейти к тандемной походке"
+          onPress={handleGoToTandemWalk}
+          style={styles.mainButton}
         />
-        <SubmitButton 
-          text="Завершить тест" 
-          onPress={handleFinalSubmit} 
-          style={[styles.resultActionItem, styles.finishButton]}
+        <SubmitButton
+          text="Перейти к тандемной с двойным заданием"
+          onPress={handleGoToTandemWalkDual}
+          style={styles.mainButton}
+        />
+        <SubmitButton
+          text="Пропустить тандемную походку"
+          onPress={handleSkipTandemWalk}
+          style={styles.mainButton}
+        />
+        <SubmitButton
+          text="Сбросить тест"
+          onPress={handleResetAllMbessTests}
+          style={[styles.mainButton, styles.resetButton]}
         />
       </View>
     </View>
@@ -436,21 +455,17 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   resultsButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     width: '100%',
     marginTop: 24,
-    gap: 10,
   },
   actionButton: {
   },
-  resultActionItem: {
-    flex: 1,
+  mainButton: {
+    width: '100%',
+    marginBottom: 12,
   },
   resetButton: {
     backgroundColor: '#E57373',
-  },
-  finishButton: {
   },
   resultItem: {
     width: '100%',

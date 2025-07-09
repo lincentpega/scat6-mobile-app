@@ -42,22 +42,11 @@ export default function TandemWalk() {
   };
 
   const saveTandemWalkData = () => {
-    const attemptsValues = [attempt1, attempt2, attempt3].filter(v => v > 0);
-    const avgResult = attemptsValues.length > 0 ? Math.round(attemptsValues.reduce((a, b) => a + b, 0) / attemptsValues.length) : 0;
-    const bResult = attemptsValues.length > 0 ? Math.min(...attemptsValues) : 0;
-
     const isolatedTaskData: MedicalOfficeAssessment.TandemWalkIsolatedTask = {
       trials: [attempt1, attempt2, attempt3],
-      avgResult: avgResult,
-      bestResult: bResult,
     };
 
     updateTandemWalkIsolatedTask(isolatedTaskData);
-  };
-
-  const handleGoToDualTask = () => {
-    saveTandemWalkData();
-    router.push('/(testing-form)/tandem-walk-dual');
   };
 
   const handleFinishTesting = () => {
@@ -157,18 +146,11 @@ export default function TandemWalk() {
 
         <View style={styles.buttonContainer}>
           {isLastTrial ? (
-            <>
-              <SubmitButton
-                text="Перейти к тандемной походке с двумя задачами"
-                onPress={handleGoToDualTask}
-                style={styles.mainButton}
-              />
-              <SubmitButton
-                text="Завершить тестирование"
-                onPress={handleFinishTesting}
-                style={styles.mainButton}
-              />
-            </>
+            <SubmitButton
+              text="Завершить тестирование"
+              onPress={handleFinishTesting}
+              style={styles.mainButton}
+            />
           ) : (
             <SubmitButton text={`Перейти к попытке ${trialNumber + 1}`} onPress={proceedToNextStep} style={styles.mainButton} />
           )}

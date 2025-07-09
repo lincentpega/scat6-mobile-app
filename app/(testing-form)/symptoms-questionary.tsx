@@ -86,7 +86,7 @@ function YesNoButtonGroup({ value, onChange }: { value: boolean | null; onChange
 }
 
 export default function SymptomsQuestionary() {
-  const { medicalOfficeAssessment, updateSymptoms } = useFormContext();
+  const { medicalOfficeAssessment, updateSymptoms, updateSymptomsDetails } = useFormContext();
   const [symptoms, setSymptoms] = useState<MedicalOfficeAssessment.Symptoms>({
     headache: 0,
     headPressure: 0,
@@ -110,56 +110,43 @@ export default function SymptomsQuestionary() {
     depression: 0,
     anxiety: 0,
     sleepIssues: 0,
+  });
+  const [symptomsDetails, setSymptomsDetails] = useState<MedicalOfficeAssessment.SymptomsDetails>({
     worseAfterPhysicalActivity: false,
     worseAfterMentalActivity: false,
     wellnessPercent: 100,
     not100Reason: '',
-    score: 0,
-    presentSymptoms: 0,
   });
 
   useEffect(() => {
     if (medicalOfficeAssessment.symptoms) {
       setSymptoms(medicalOfficeAssessment.symptoms);
     }
-  }, [medicalOfficeAssessment.symptoms]);
+    if (medicalOfficeAssessment.symptomsDetails) {
+      setSymptomsDetails(medicalOfficeAssessment.symptomsDetails);
+    }
+  }, [medicalOfficeAssessment.symptoms, medicalOfficeAssessment.symptomsDetails]);
 
   const handleScoreChange = (id: string, value: number) => {
     setSymptoms(prev => ({ ...prev, [id]: value }));
   };
 
   const handleYesNoChange = (key: string, value: boolean) => {
-    setSymptoms(prev => ({ ...prev, [key]: value }));
+    setSymptomsDetails(prev => ({ ...prev, [key]: value }));
   };
 
   const handlePercentChange = (text: string) => {
     const numericValue = parseInt(text) || 0;
-    setSymptoms(prev => ({ ...prev, wellnessPercent: numericValue }));
+    setSymptomsDetails(prev => ({ ...prev, wellnessPercent: numericValue }));
   };
 
   const handleNot100ReasonChange = (text: string) => {
-    setSymptoms(prev => ({ ...prev, not100Reason: text }));
+    setSymptomsDetails(prev => ({ ...prev, not100Reason: text }));
   };
 
   const handleSubmit = () => {
-    let calculatedPresentSymptoms = 0;
-    let calculatedScore = 0;
-
-    SYMPTOMS.forEach(symptom => {
-      const score = symptoms[symptom.id as keyof MedicalOfficeAssessment.Symptoms] as number;
-      if (score > 0) {
-        calculatedPresentSymptoms++;
-      }
-      calculatedScore += score;
-    });
-
-    const updatedSymptomsData = {
-      ...symptoms,
-      presentSymptoms: calculatedPresentSymptoms,
-      score: calculatedScore,
-    };
-
-    updateSymptoms(updatedSymptomsData);
+    updateSymptoms(symptoms);
+    updateSymptomsDetails(symptomsDetails);
     router.push('/(testing-form)/orientation-assessment');
   };
 
@@ -183,7 +170,7 @@ export default function SymptomsQuestionary() {
             <View key={q.key} style={styles.yesNoRow}>
               <InputLabel label={q.label} />
               <YesNoButtonGroup 
-                value={symptoms[q.key as keyof MedicalOfficeAssessment.Symptoms] as boolean} 
+                value={symptomsDetails[q.key as keyof MedicalOfficeAssessment.SymptomsDetails] as boolean} 
                 onChange={(value) => handleYesNoChange(q.key, value)} 
               />
             </View>
@@ -193,7 +180,7 @@ export default function SymptomsQuestionary() {
           <InputLabel label="Если считать 100% абсолютно нормальным показателем, то на сколько вы оцениваете свое самочувствие в процентах?" />
           <TextInputField
             placeholder="Введите процент (например, 80)"
-            value={symptoms.wellnessPercent.toString()}
+            value={symptomsDetails.wellnessPercent.toString()}
             onChangeText={handlePercentChange}
             keyboardType="numeric"
             style={{ marginBottom: 10 }}
@@ -201,7 +188,7 @@ export default function SymptomsQuestionary() {
           <InputLabel label="Если не на 100%, то почему?" />
           <TextInputField
             placeholder="Опишите причину..."
-            value={symptoms.not100Reason}
+            value={symptomsDetails.not100Reason ?? ''}
             onChangeText={(text) => handleNot100ReasonChange(text)}
             multiline
             numberOfLines={3}

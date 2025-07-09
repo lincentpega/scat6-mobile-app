@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ScrollViewKeyboardAwareContainer from '@/components/Container';
 import SubmitButton from '@/components/SubmitButton';
 import InputLabel from '@/components/InputLabel';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useFormContext } from '@/contexts/FormContext';
 import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
@@ -22,33 +22,34 @@ const MONTHS_REVERSED = [
   'ЯНВАРЬ',
 ];
 
-type AttemptResult = 'pending' | 'success' | 'fail';
-
 export default function ConcentrationMonths() {
   const { updateConcentrationMonths } = useFormContext();
-  const [errors, setErrors] = useState('0');
-  const [attemptResult, setAttemptResult] = useState<AttemptResult>('pending');
-
-  const errorsNum = parseInt(errors, 10);
-  const score = attemptResult === 'success' ? 1 : 0;
-
-  const handleAttempt = (wasSuccessful: boolean) => {
-    if (wasSuccessful) {
-      setAttemptResult('success');
-      setErrors('0'); // On success, errors are 0
-    } else {
-      setAttemptResult('fail');
-      // Errors can be manually entered if it was a fail
-    }
-  };
+  const [success, setSuccess] = useState<boolean | null>(null);
 
   const handleSubmit = () => {
+    if (success === null) {
+      return;
+    }
     const data: MedicalOfficeAssessment.ConcentrationMonths = {
-      errors: attemptResult === 'success' ? 0 : (isNaN(errorsNum) ? 1 : errorsNum), // If success, 0 errors. If fail, use input or default to 1 if input is invalid.
-      score: score,
+      success: success,
     };
     updateConcentrationMonths(data);
     router.push('/(testing-form)/coordination-and-balance-mbess');
+  };
+
+  const handleResetConfirmation = () => {
+    Alert.alert(
+      "Сбросить результат?",
+      "Вы уверены, что хотите сбросить выбор и ответить заново?",
+      [
+        { text: "Отмена", style: "cancel" },
+        {
+          text: "Сбросить",
+          onPress: () => setSuccess(null),
+          style: "destructive",
+        },
+      ]
+    );
   };
 
   return (
@@ -68,34 +69,30 @@ export default function ConcentrationMonths() {
           ))}
         </View>
 
-        {attemptResult === 'pending' && (
+        {success === null ? (
           <View style={styles.attemptButtonsContainer}>
-            <SubmitButton text="Успех" onPress={() => handleAttempt(true)} style={[styles.attemptButton, styles.successButton]} />
-            <SubmitButton text="Провал" onPress={() => handleAttempt(false)} style={[styles.attemptButton, styles.failButton]} />
+            <SubmitButton text="Успех" onPress={() => setSuccess(true)} style={[styles.attemptButton, styles.successButton]} />
+            <SubmitButton text="Провал" onPress={() => setSuccess(false)} style={[styles.attemptButton, styles.failButton]} />
           </View>
-        )}
-
-        {attemptResult !== 'pending' && (
+        ) : (
           <View style={styles.resultSection}>
-            <Text style={styles.resultLabel}>Результат зафиксирован: {attemptResult === 'success' ? 'Успех' : 'Провал'}</Text>
-            {attemptResult === 'fail' && (
-                <View style={styles.inputRowSingle}>
-                    <InputLabel label="Количество ошибок" />
-                    <TextInput
-                        style={styles.input}
-                        keyboardType="numeric"
-                        value={errors}
-                        onChangeText={setErrors}
-                        placeholder="0"
-                        maxLength={2}
-                    />
-                </View>
-            )}
-            <Text style={styles.finalScoreText}>Итоговый балл: <Text style={{ fontWeight: 'bold' }}>{score}</Text> из 1</Text>
+             <Text style={styles.resultLabel}>Результат зафиксирован: {success ? 'Успех' : 'Провал'}</Text>
           </View>
         )}
         
-        <SubmitButton text="Далее" onPress={handleSubmit} style={styles.submitButton} />
+        <View style={styles.footerButtonsContainer}>
+          <SubmitButton 
+            text="Далее" 
+            onPress={handleSubmit} 
+            style={styles.mainButton}
+            disabled={success === null} 
+          />
+          <SubmitButton 
+            text="Сбросить" 
+            onPress={handleResetConfirmation} 
+            style={[styles.mainButton, styles.resetButton]}
+          />
+        </View>
       </View>
     </ScrollViewKeyboardAwareContainer>
   );
@@ -135,7 +132,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#444',
-    paddingHorizontal: 3, // Add some spacing around the hyphen
+    paddingHorizontal: 3,
   },
   attemptButtonsContainer: {
     flexDirection: 'row',
@@ -148,10 +145,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   successButton: {
-    backgroundColor: '#4CAF50', // Green
+    backgroundColor: '#4CAF50',
   },
   failButton: {
-    backgroundColor: '#F44336', // Red
+    backgroundColor: '#F44336',
   },
   resultSection: {
     width: '100%',
@@ -164,25 +161,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#2c3e50'
   },
-  inputRowSingle: {
-    width: '60%', // Or adjust as needed
-    marginBottom: 15,
+  footerButtonsContainer: {
+    marginTop: 20,
+    width: '80%',
     alignItems: 'center',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    fontSize: 16,
-    backgroundColor: '#f7f7fa',
+  mainButton: {
     width: '100%',
-    textAlign: 'center',
+    marginBottom: 12,
   },
-  finalScoreText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 10,
+  resetButton: {
+    backgroundColor: '#E57373',
   },
   submitButton: {
     marginTop: 24,

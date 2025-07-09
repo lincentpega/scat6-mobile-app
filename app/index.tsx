@@ -24,7 +24,6 @@ export default function HomeScreen() {
     setLoading(true);
     await logout();
     setLoading(false);
-    // при логауте контекст сбросит isUserLoggedIn, UI автоматически отрисуется
   };
 
   const handleBasicTesting = () => {
@@ -79,13 +78,23 @@ export default function HomeScreen() {
             <View style={{ marginTop: 10, width: '100%' }}>
               <TextInputField
                 placeholder="Введите имя спортсмена"
-                value={athleteTmpFullName || ''}
+                value={athleteTmpFullName ?? ''}
                 onChangeText={setAthleteTmpFullName}
                 label="Имя спортсмена"
               />
             </View>
-            <SubmitButton style={{ marginTop: 20 }} onPress={handleBasicTesting} text="Базовое тестирование" />
-            <SubmitButton style={{ marginTop: 10 }} onPress={handlePostInjuryTesting} text="Тестирование после травмы" />
+            <SubmitButton
+              style={{ marginTop: 20 }}
+              onPress={handleBasicTesting}
+              text="Базовое тестирование"
+              disabled={!athleteTmpFullName}
+            />
+            <SubmitButton
+              style={{ marginTop: 10 }}
+              onPress={handlePostInjuryTesting}
+              text="Тестирование после травмы"
+              disabled={!athleteTmpFullName}
+            />
           </>
         )}
 

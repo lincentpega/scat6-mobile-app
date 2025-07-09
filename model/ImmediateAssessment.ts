@@ -31,9 +31,9 @@ export namespace ImmediateAssessment {
   }
 
   export interface GlasgowScale {
-    eye: string;
-    verbal: string;
-    motor: string;
+    eye: number;
+    verbal: number;
+    motor: number;
   }
 
   export interface CoordinationEyeMovement {

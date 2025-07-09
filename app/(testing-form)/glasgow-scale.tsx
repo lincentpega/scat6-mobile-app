@@ -7,30 +7,30 @@ import type { ImmediateAssessment } from "@/model/ImmediateAssessment";
 import { useFormContext } from "@/contexts/FormContext";
 
 const EYE_RESPONSES = [
-  { label: 'Глаза не открываются', value: 'none' },
-  { label: 'Глаза реагируют на болевое', value: 'pain' },
-  { label: 'Глаза реагируют на вербальный стимул', value: 'verbal' },
-  { label: 'Глаза открываются произвольно', value: 'spontaneous' },
+  { label: 'Глаза не открываются', value: 1 },
+  { label: 'Глаза реагируют на болевое', value: 2 },
+  { label: 'Глаза реагируют на вербальный стимул', value: 3 },
+  { label: 'Глаза открываются произвольно', value: 4 },
 ];
 
 const VERBAL_RESPONSES = [
-  { label: 'Речь отсутствует', value: 'none' },
-  { label: 'Нечленораздельные звуки', value: 'sounds' },
-  { label: 'Бессвязные слова', value: 'words' },
-  { label: 'Спутанная речь', value: 'confused' },
-  { label: 'Больной ориентирован, речь в норме', value: 'oriented' },
+  { label: 'Речь отсутствует', value: 1 },
+  { label: 'Нечленораздельные звуки', value: 2 },
+  { label: 'Бессвязные слова', value: 3 },
+  { label: 'Спутанная речь', value: 4 },
+  { label: 'Больной ориентирован, речь в норме', value: 5 },
 ];
 
 const MOTOR_RESPONSES = [
-  { label: 'Двигательная реакция отсутствует', value: 'none' },
-  { label: 'Патологическое разгибание в ответ на болевое раздражение', value: 'extension' },
-  { label: 'Патологическое сгибание в ответ на болевое раздражение', value: 'flexion' },
-  { label: 'Отдергивание конечности в ответ на болевое раздражение', value: 'withdrawal' },
-  { label: 'Целенаправленное движение в ответ на болевое раздражение', value: 'purposeful' },
-  { label: 'Выполнение движений по команде', value: 'obeys' },
+  { label: 'Двигательная реакция отсутствует', value: 1 },
+  { label: 'Патологическое разгибание в ответ на болевое раздражение', value: 2 },
+  { label: 'Патологическое сгибание в ответ на болевое раздражение', value: 3 },
+  { label: 'Отдергивание конечности в ответ на болевое раздражение', value: 4 },
+  { label: 'Целенаправленное движение в ответ на болевое раздражение', value: 5 },
+  { label: 'Выполнение движений по команде', value: 6 },
 ];
 
-function RoundButtonGroup({ options, value, onChange }: { options: { label: string, value: string }[], value: string, onChange: (v: string) => void }) {
+function RoundButtonGroup({ options, value, onChange }: { options: { label: string, value: number }[], value: number, onChange: (v: number) => void }) {
   return (
     <View style={styles.buttonGroup}>
       {options.map(option => (

@@ -71,17 +71,14 @@ export default function ShortTermMemory() {
   };
 
   const handleSubmit = () => {
-    const trial1Score = trialAnswers.trial1.filter(answer => answer === true).length;
-    const trial2Score = trialAnswers.trial2.filter(answer => answer === true).length;
-    const trial3Score = trialAnswers.trial3.filter(answer => answer === true).length;
-    const totalScore = trial1Score + trial2Score + trial3Score;
-
+    const trial1Score = trialAnswers.trial1.filter(answer => answer).length;
+    const trial2Score = trialAnswers.trial2.filter(answer => answer).length;
+    const trial3Score = trialAnswers.trial3.filter(answer => answer).length;
     const dataToSave: FullMedicalOfficeAssessment.ShortTermMemory = {
       list: selectedListKey,
       trial1Score,
       trial2Score,
       trial3Score,
-      totalScore,
       testFinishTime: new Date(),
     };
     updateShortTermMemory(dataToSave);

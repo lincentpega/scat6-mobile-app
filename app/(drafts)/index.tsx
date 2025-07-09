@@ -10,6 +10,7 @@ import AthleteSelectionModal from '@/components/AthleteSelectionModal';
 import SubmitButton from '@/components/SubmitButton';
 import { useAuth } from '@/context/AuthContext';
 import { sendImmediateAssessment, sendMedicalOfficeAssessment } from '@/services/apiService';
+import { useFormContext } from '@/contexts/FormContext';
 
 type Draft = Partial<ImmediateAssessment> | Partial<MedicalOfficeAssessment>;
 
@@ -20,6 +21,7 @@ export default function TestingFormScreen() {
     const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const { isUserLoggedIn } = useAuth();
+    const { getFullMedicalOfficeAssessment, getFullImmediateAssessment } = useFormContext();
 
     const fetchDrafts = useCallback(async () => {
         setLoading(true);
@@ -121,17 +123,12 @@ export default function TestingFormScreen() {
                 // It's an ImmediateAssessment - cast to complete object
                 const immediateAssessment = draft as Partial<ImmediateAssessment>;
                 
-                const completeAssessment: ImmediateAssessment = {
-                    id: immediateAssessment.id,
-                    sportsmanId: immediateAssessment.sportsmanId!,
-                    startDate: immediateAssessment.startDate!,
-                    endDate: immediateAssessment.endDate!,
-                    observableSigns: immediateAssessment.observableSigns!,
-                    neckSpineAssessment: immediateAssessment.neckSpineAssessment!,
-                    glasgowScale: immediateAssessment.glasgowScale!,
-                    coordinationEyeMovement: immediateAssessment.coordinationEyeMovement!,
-                    maddocksQuestions: immediateAssessment.maddocksQuestions!,
-                };
+                if (!immediateAssessment.sportsmanId) {
+                    Alert.alert('Ошибка', 'Необходимо выбрать спортсмена');
+                    return;
+                }
+
+                const completeAssessment = getFullImmediateAssessment(immediateAssessment);
                 
                 console.log('Submitting immediate assessment:', completeAssessment);
                 await sendImmediateAssessment(completeAssessment);
@@ -150,24 +147,9 @@ export default function TestingFormScreen() {
                     Alert.alert('Ошибка', 'Необходимо выбрать спортсмена');
                     return;
                 }
-                
-                const completeAssessment: MedicalOfficeAssessment = {
-                    id: medicalAssessment.id,
-                    sportsmanId: medicalAssessment.sportsmanId,
-                    symptoms: medicalAssessment.symptoms,
-                    orientationAssessment: medicalAssessment.orientationAssessment,
-                    cognitiveFunctions: medicalAssessment.cognitiveFunctions,
-                    shortTermMemory: medicalAssessment.shortTermMemory,
-                    concentrationNumbers: medicalAssessment.concentrationNumbers,
-                    concentrationMonths: medicalAssessment.concentrationMonths,
-                    mbessTest: medicalAssessment.mbessTest,
-                    tandemWalkIsolatedTask: medicalAssessment.tandemWalkIsolatedTask,
-                    tandemWalkDualTask: medicalAssessment.tandemWalkDualTask,
-                    tandemWalkResult: medicalAssessment.tandemWalkResult,
-                    deferredMemory: medicalAssessment.deferredMemory,
-                    wasKnownBefore: medicalAssessment.wasKnownBefore,
-                    differsFromKnownBefore: medicalAssessment.differsFromKnownBefore,
-                };
+
+                const completeAssessment = getFullMedicalOfficeAssessment(medicalAssessment);
+                console.log('Complete assessment:', completeAssessment);
                 
                 console.log('Submitting medical office assessment:', completeAssessment);
                 await sendMedicalOfficeAssessment(completeAssessment);

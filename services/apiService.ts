@@ -3,9 +3,11 @@ import { getValidAccessToken } from './authService';
 import { Sportsman, SportsmanSearchResult } from '@/model/Sportsman';
 import { ImmediateAssessment } from '@/model/ImmediateAssessment';
 import { MedicalOfficeAssessment } from '@/model';
+import { mapToDto as mapToMedicalOfficeAssessmentDto } from '@/mappers/medicalOfficeAssessmentMapper';
+import { mapToDto as mapToImmediateAssessmentDto } from '@/mappers/immediateAssessmentMapper';
 
 // Base API URL - using the same IP as auth service
-const API_BASE_URL = process.env.API_BASE_URL ?? 'http://192.168.0.118:8080';
+const API_BASE_URL = process.env.API_BASE_URL ?? 'http://192.168.0.104:8080';
 
 /**
  * Generic API request function with authentication using axios
@@ -42,19 +44,21 @@ export async function sendSportsman(sportsman: Sportsman): Promise<Sportsman> {
 
 export async function sendMedicalOfficeAssessment(
   assessment: MedicalOfficeAssessment
-): Promise<MedicalOfficeAssessment> {
-  return apiRequest<MedicalOfficeAssessment>('/api/medical-office-assessments', {
+): Promise<void> {
+  const dto = mapToMedicalOfficeAssessmentDto(assessment);
+  await apiRequest<void>('/api/medical-office-assessments', {
     method: 'POST',
-    data: assessment,
+    data: dto,
   });
 }
 
 export async function sendImmediateAssessment(
   assessment: ImmediateAssessment
-): Promise<ImmediateAssessment> {
-  return apiRequest<ImmediateAssessment>('/api/immediate-assessments', {
+): Promise<void> {
+  const dto = mapToImmediateAssessmentDto(assessment);
+  await apiRequest<void>('/api/immediate-assessments', {
     method: 'POST',
-    data: assessment,
+    data: dto,
   });
 }
 
@@ -68,10 +72,14 @@ export async function fetchAthletes(page: number, limit: number, fullNamePrefix?
     params.fullNamePrefix = fullNamePrefix;
   }
 
-  return apiRequest<SportsmanSearchResult>('/api/sportsmans', {
+  console.log('Fetching athletes with params:', params);
+
+  const response = await apiRequest<SportsmanSearchResult>('/api/sportsmans', {
     method: 'GET',
     params,
   });
+  console.log('Fetched athletes response:', response);
+  return response;
 }
 
 export async function fetchAthlete(id: string): Promise<Sportsman> {

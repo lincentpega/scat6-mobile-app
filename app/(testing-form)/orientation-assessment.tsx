@@ -23,7 +23,6 @@ export default function OrientationAssessment() {
     weekday: false,
     year: false,
     time: false,
-    score: 0,
   });
 
   useEffect(() => {
@@ -31,13 +30,6 @@ export default function OrientationAssessment() {
       setOrientationAssessment(medicalOfficeAssessment.orientationAssessment);
     }
   }, [medicalOfficeAssessment.orientationAssessment]);
-
-  useEffect(() => {
-    const newScore = ORIENTATION_QUESTIONS.reduce((sum, q) => 
-      sum + (orientationAssessment[q.key as keyof MedicalOfficeAssessment.OrientationAssessment] ? 1 : 0), 0
-    );
-    setOrientationAssessment(prev => ({ ...prev, score: newScore }));
-  }, [orientationAssessment.month, orientationAssessment.date, orientationAssessment.weekday, orientationAssessment.year, orientationAssessment.time]);
 
   const handleChange = (key: string) => {
     setOrientationAssessment(prev => ({ 
@@ -62,13 +54,12 @@ export default function OrientationAssessment() {
             <CheckboxField
               key={q.key}
               label={q.label}
-              checked={orientationAssessment[q.key as keyof MedicalOfficeAssessment.OrientationAssessment] as boolean}
+              checked={orientationAssessment[q.key as keyof MedicalOfficeAssessment.OrientationAssessment]}
               onChange={() => handleChange(q.key)}
               style={{ borderBottomWidth: idx === ORIENTATION_QUESTIONS.length - 1 ? 1 : 0 }}
             />
           ))}
         </View>
-        <Text style={styles.scoreText}>Оценка ориентации: <Text style={{ fontWeight: 'bold' }}>{orientationAssessment.score}</Text> / 5</Text>
         <SubmitButton text="Далее" onPress={handleSubmit} style={{ marginTop: 20 }} />
       </View>
     </ScrollViewKeyboardAwareContainer>

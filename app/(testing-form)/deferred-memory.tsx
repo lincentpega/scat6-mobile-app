@@ -8,6 +8,7 @@ import type { MedicalOfficeAssessment } from '@/model/MedicalOfficeAssessment';
 import { saveMedicalOfficeAssessment } from '@/services/medicalOfficeAssessmentStorageService';
 import { useAthleteContext } from '@/contexts/AthleteContext';
 import { router } from 'expo-router';
+import type { WordListKey } from '@/constants/app-types';
 
 const WORD_LISTS = {
   A: ['Куртка', 'Стрела', 'Перец', 'Хлопок', 'Кино', 'Доллар', 'Мёд', 'Зеркало', 'Седло', 'Якорь'],
@@ -15,11 +16,10 @@ const WORD_LISTS = {
   C: ['Малыш', 'Обезьяна', 'Духи', 'Закат', 'Железо', 'Локоть', 'Яблоко', 'Ковер', 'Седло', 'Пузырь'],
 };
 const LIST_LABELS = ['A', 'B', 'C'] as const;
-type ListKey = keyof typeof WORD_LISTS;
 
 export default function DeferredMemory() {
   const { medicalOfficeAssessment, updateDeferredMemory, clearMedicalOfficeAssessment, setIsFormActive } = useFormContext();
-  const [selectedList, setSelectedList] = useState<ListKey>('A');
+  const selectedList: WordListKey = medicalOfficeAssessment.shortTermMemory?.list ?? 'A';
   const [answers, setAnswers] = useState<boolean[]>(Array(10).fill(false));
   const [currentStartTime, setCurrentStartTime] = useState('');
   const { athleteId, athleteTmpFullName, setAthleteId, setAthleteTmpFullName } = useAthleteContext();
@@ -30,10 +30,7 @@ export default function DeferredMemory() {
     setCurrentStartTime(newStartTime);
 
     if (medicalOfficeAssessment.deferredMemory) {
-      const { list, result: contextResult } = medicalOfficeAssessment.deferredMemory;
-      if (LIST_LABELS.includes(list)) {
-        setSelectedList(list);
-      }
+      const { result: contextResult } = medicalOfficeAssessment.deferredMemory;
       const newAnswers = Array(10).fill(false);
       if (typeof contextResult === 'number' && contextResult >= 0 && contextResult <= 10) {
         for (let i = 0; i < contextResult; i++) {
@@ -48,28 +45,30 @@ export default function DeferredMemory() {
     setAnswers(prev => prev.map((v, i) => (i === idx ? !v : v)));
   };
 
-  const handleListSelect = (list: ListKey) => {
-    setSelectedList(list);
-    setAnswers(Array(10).fill(false));
-  };
-
   const result = answers.filter(Boolean).length;
 
   const handleSubmit = () => {
-    const dataToSave: MedicalOfficeAssessment.DeferredMemory = {
-      startTime: currentStartTime,
+    const deferredMemoryData: MedicalOfficeAssessment.DeferredMemory = {
+      startTime: new Date(currentStartTime),
       list: selectedList,
       result: result,
     };
-    updateDeferredMemory(dataToSave);
-    medicalOfficeAssessment.sportsmanId = athleteId ?? undefined;
-    medicalOfficeAssessment.athleteTmpFullName = athleteTmpFullName ?? undefined;
-    saveMedicalOfficeAssessment(medicalOfficeAssessment);
-    clearMedicalOfficeAssessment();
-    setIsFormActive(false);
-    setAthleteId(null);
-    setAthleteTmpFullName(null);
-    router.navigate('/(drafts)');
+
+    const assessmentToSave: Partial<MedicalOfficeAssessment> = {
+      ...medicalOfficeAssessment,
+      deferredMemory: deferredMemoryData,
+      sportsmanId: athleteId ?? undefined,
+      athleteTmpFullName: athleteTmpFullName ?? undefined,
+    };
+
+    saveMedicalOfficeAssessment(assessmentToSave).then(() => {
+      console.log('Saved assessment:', assessmentToSave);
+      clearMedicalOfficeAssessment();
+      setIsFormActive(false);
+      setAthleteId(null);
+      setAthleteTmpFullName(null);
+      router.navigate('/(drafts)');
+    });
   };
 
   return (
@@ -81,28 +80,15 @@ export default function DeferredMemory() {
           <Text style={{ fontWeight: 'bold' }}>Скажите:</Text> "Помните тот список слов, который я читал ранее? Назовите столько слов из списка, сколько сможете вспомнить, в любом порядке."
         </Text>
         <View style={styles.row}>
-          <Text style={styles.inputLabel}>Выберите список слов</Text>
-          {LIST_LABELS.map((list) => (
-            <View key={list} style={styles.listSelectCol}>
-              <BouncyCheckbox
-                isChecked={selectedList === list}
-                onPress={() => handleListSelect(list)}
-                fillColor="#000"
-                unFillColor="#fff"
-                size={24}
-                iconStyle={{ borderColor: '#000', borderRadius: 6 }}
-                innerIconStyle={{ borderWidth: 2, borderRadius: 6 }}
-                style={{ marginBottom: 2, alignSelf: 'center', width: 24 }}
-              />
-              <Text style={styles.listLabel}>{list}</Text>
-            </View>
-          ))}
+          <Text style={styles.inputLabel}>Используется список слов:</Text>
+          <View style={styles.listBadge}>
+            <Text style={styles.listBadgeText}>{selectedList}</Text>
+          </View>
         </View>
         <View style={styles.table}>
           <View style={styles.tableHeaderRow}>
             <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Список {selectedList}</Text>
             <Text style={styles.tableHeaderCell}>Проба</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Альтернативные списки</Text>
           </View>
           {WORD_LISTS[selectedList].map((word: string, idx: number) => (
             <View key={word} style={styles.tableRow}>
@@ -119,15 +105,11 @@ export default function DeferredMemory() {
                   style={{ alignSelf: 'center', width: 22 }}
                 />
               </View>
-              <Text style={[styles.tableCell, { flex: 2, color: '#888', fontSize: 13 }]}> 
-                {LIST_LABELS.filter(l => l !== selectedList).map(l => WORD_LISTS[l][idx]).join(' / ')}
-              </Text>
             </View>
           ))}
           <View style={styles.tableFooterRow}>
             <Text style={[styles.tableFooterCell, { flex: 2 }]}>Результат</Text>
             <Text style={styles.tableFooterCell}>{result}</Text>
-            <Text style={[styles.tableFooterCell, { flex: 2 }]}></Text>
           </View>
         </View>
         <SubmitButton text="Завершить тест" onPress={handleSubmit} style={{ marginTop: 24, width: '100%' }} />
@@ -178,14 +160,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     minWidth: 70,
   },
-  listSelectCol: {
-    alignItems: 'center',
+  listBadge: {
+    backgroundColor: '#2f2d51',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     marginHorizontal: 4,
   },
-  listLabel: {
-    fontSize: 15,
-    color: '#222',
-    marginTop: 2,
+  listBadgeText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   table: {
     width: '100%',

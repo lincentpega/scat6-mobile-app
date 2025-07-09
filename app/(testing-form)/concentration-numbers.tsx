@@ -140,7 +140,7 @@ export default function ConcentrationNumbers() {
                 >
                     <Picker.Item label="A" value="A" />
                     <Picker.Item label="B" value="B" />
-                    <Picker.Item label="C" value="V" />
+                    <Picker.Item label="C" value="C" />
                 </Picker>
             </View>
             <SubmitButton text="Начать тестирование" onPress={proceedToTesting} style={styles.actionButton} />
@@ -209,11 +209,6 @@ const styles = StyleSheet.create({
         color: '#333',
         textAlign: 'center',
         lineHeight: 22,
-    },
-    italicInstruction: {
-        fontStyle: 'italic',
-        marginBottom: 24,
-        paddingHorizontal: 10, // Ensure it doesn't touch edges
     },
     pickerContainer: {
         flexDirection: 'row',
@@ -287,5 +282,8 @@ const styles = StyleSheet.create({
     actionButton: {
         marginTop: 20,
         width: '80%',
+    },
+    italicInstruction: {
+        fontStyle: 'italic',
     },
 }); 
